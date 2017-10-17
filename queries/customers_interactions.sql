@@ -1,3 +1,4 @@
+#standardSQL
 SELECT
   user,
   productSku,
