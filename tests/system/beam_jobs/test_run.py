@@ -21,11 +21,11 @@
 #SOFTWARE.
 
 
+import os
+import ast
 import sys
 sys.path.append('.')
-import os
 
-print [os.path.abspath(e) for e in sys.path]
 import unittest
 import beam_jobs.run as module_run
 
@@ -36,50 +36,24 @@ class Test_Run(unittest.TestCase):
     def load_args():
         return ['--table_id=ga_sessions_*',
                 '--dataset_id=12345',
-                '--project_id=company',
+                '--project_id=dafiti-analytics',
                 '--output=output.csv',
                 '--query_path=./tests/data/queries/test_customers_query.sql',
                 '--date=20171010',
                 '--runner=DirectRunner']
 
 
-    def test_process_args(self):
-        args = self.load_args()
+    def test_main(self):
+        sys.argv = ['foo'] + self.load_args()
+        module_run.main()
+        expected = {u'dataset_id': u'12345',
+                    u'project_id': u'dafiti-analytics',
+                    u'table_id': u'ga_sessions_*',
+                    u'date_': u'20171010'}
 
-        known_args, pipeline_options = module_run.process_args(args)
-        self.assertEqual(known_args.table_id, 'ga_sessions_*')
-        self.assertEqual(known_args.dataset_id, '12345')
-        self.assertEqual(known_args.project_id, 'company')
-        self.assertEqual(known_args.output, 'output.csv')
-        self.assertEqual(known_args.query_path, './tests/data/queries/test_customers_query.sql')
-        self.assertEqual(known_args.date, '20171010')
-        self.assertEqual(pipeline_options.display_data()['runner'], 'DirectRunner') 
-        self.assertEqual(pipeline_options.display_data()['project'], 'company') 
+        file_ = 'output.csv-00000-of-00001'
+        result = ast.literal_eval(open(file_).read())
 
-
-    def test_build_query(self):
-        args = self.load_args()
-        known_args, _ = module_run.process_args(args)
-        query = module_run.build_query(known_args)
-        expected = """#standardSQL
-                   SELECT
-                     table_id,
-                     dataset_id,
-                     project_id,
-                     date_
-                   FROM(
-                     SELECT
-                       ga_sessions_* AS table_id,
-                       12345 AS dataset_id,
-                       company AS project_id,
-                       20171010 AS date_
-                     )
-                     """
-
-        print query
-
-        print
-
-        print expected
-        self.assertEqual(expected.replace(' ', ''), query.replace(' ', '')) 
-
+        self.assertEqual(expected, result)
+        os.remove(file_)
+        self.assertFalse(os.path.isfile(file_))

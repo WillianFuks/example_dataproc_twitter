@@ -69,17 +69,12 @@ class Test_Run(unittest.TestCase):
                      date_
                    FROM(
                      SELECT
-                       ga_sessions_* AS table_id,
-                       12345 AS dataset_id,
-                       company AS project_id,
-                       20171010 AS date_
+                       'ga_sessions_*' AS table_id,
+                       '12345' AS dataset_id,
+                       'company' AS project_id,
+                       '20171010' AS date_
                      )
                      """
 
-        print query
-
-        print
-
-        print expected
         self.assertEqual(expected.replace(' ', ''), query.replace(' ', '')) 
 
