@@ -19,3 +19,32 @@
 #LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
+
+
+import utils as utils
+from flask import Flask, request 
+from config import config
+from connector.gcp import GCPService
+
+
+app = Flask(__name__)
+bq_service = GCPService('bigquery') 
+
+@app.route("/queue_export", methods=['POST'])
+def export():
+    date = (None if request.form.get('date') == 'None' else
+        request.form.get('date'))
+   
+    query_job_body = utils.load_query_job_body(date,
+        **config)
+
+    job = bq_service.execute_job(config['general']['project_id'],
+        query_job_body)
+    bq_service.poll_job(job)
+
+    extract_job_body = utils.load_extract_job_body(date, **config)
+    #print extract_job_body
+    bq_service.execute_job(config['general']['project_id'],
+        extract_job_body)
+
+    return "finished"

@@ -87,6 +87,7 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+.nox
 
 # Spyder project settings
 .spyderproject
@@ -100,3 +101,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# gcloud stuff
+key.json
+
+# project config
+config.py
