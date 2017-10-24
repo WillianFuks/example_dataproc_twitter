@@ -26,17 +26,32 @@ def test():
 @app.route("/test_queue", methods=['POST'])
 def test_queue():
     print 'tou aquii'
-    bc = disco.build('bigquery', 'v2', credentials=cre)
     try:
+        bc = disco.build('bigquery', 'v2', credentials=cre)
         yest_str = yest_date.strftime("%Y%m%d%S")
         job = bc.jobs().insert(projectId='dafiti-analytics',
              body=load_bq_job(load_query(config['query_path']),
                               config['project_id'],
-                              table_id='example_{}'.format(yest_str))).execute(num_retries=3)
+                              table_id='example_dataproc')).execute(num_retries=3)
     except Exception as err:
-        return str(err)   
-    print 'ARRIVED HEEEEEEEEEEERE'
-    poll_job(bc, job) 
+        return str(err)
+    t0 = time.time()
+    poll_job(bc, job)
+    t1 = time.time()
+    print 'TIME ELAPSED: ', t1 - t0
+
+    try:
+        dest = 'gs://lbanor/dataproc_example/{}/result.gz'
+        print 'DEST!!!! ', dest
+        job_config = load_extract_job('dafiti-analytics',
+            dest.format(yest_date.strftime("%Y-%m-%d")))
+        print 'JOB CONFIG: ', job_config
+        job = bc.jobs().insert(projectId='dafiti-analytics',
+            body=job_config).execute(num_retries=3)
+
+    except Exception as e:
+        return str(e)
+
     return "finished"
 
 
@@ -89,4 +104,28 @@ def load_query(query_path):
 
     return result
 
-
+def load_extract_job(project_id,
+                     destination,
+                     dataset_id='simona',
+                     table_id='example_dataproc',
+                     format='CSV',
+                     compression='GZIP'):
+                     
+    return {
+        'jobReference': {
+            'projectId': project_id,
+            'jobId': str(uuid.uuid4())
+        },
+        'configuration': {
+            'extract': {
+                'sourceTable': {
+                    'projectId': project_id,
+                    'datasetId': dataset_id,
+                    'tableId': table_id,
+                },
+                'destinationUris': [destination],
+                'destinationFormat': format,
+                'compression': compression
+            }
+        }
+    }
