@@ -20,11 +20,36 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-service: exporter
-runtime: python27
-api_version: 1
-threadsafe: true
 
-handlers:
-- url: /.*
-  script: main.app
+import sys
+import os
+import webtest
+import googleapiclient
+import unittest
+from google.appengine.ext import testbed
+from gae.exporter.main import app
+
+from google.appengine.api import taskqueue
+
+class TestExporterService(unittest.TestCase):
+    test_app = webtest.TestApp(app)
+
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_taskqueue_stub('./gae/exporter/')
+        self.taskqueue_stub = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
+
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+
+    def test_added_to_queue(self):
+        response = self.test_app.get("/export_customers")
+        self.assertEqual(response.status_int, 200)
+
+        tasks = self.taskqueue_stub.get_filtered_tasks()
+        self.assertEqual(1, len(tasks)) 
+        self.assertEqual(tasks[0].url, '/queue_export')
+

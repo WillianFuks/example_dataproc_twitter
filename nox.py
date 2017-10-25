@@ -20,11 +20,22 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-service: exporter
-runtime: python27
-api_version: 1
-threadsafe: true
 
-handlers:
-- url: /.*
-  script: main.app
+def session_gae(session):
+    """This session tests only the tests associated to google AppEngine
+    folder. To run it, type `nox --session gae`
+    """
+    session.interpreter = 'python2.7'
+    session.virtualenv_dirname = 'unit-gae'
+
+    session.install('-r', 'gae/exporter/requirements.txt')
+    session.install('pytest', 'pytest-cov', 'mock')
+
+    session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
+                                  'google_appengine/')}
+
+    session.run(
+        'py.test',
+        'tests/unit/gae/exporter/test_exporter.py')
+
+

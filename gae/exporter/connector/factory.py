@@ -20,11 +20,26 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-service: exporter
-runtime: python27
-api_version: 1
-threadsafe: true
+"""Factory module to build google's apis services such as BigQuery service or
+Cloud Storage.
+"""
 
-handlers:
-- url: /.*
-  script: main.app
+
+class FactorGCPService(object):
+
+    @classmethod
+    def build_service(name, credentials=None):
+        """Builds a connector to interact with Google Cloud tools.
+
+        :type name: str
+        :param name: name of which service to build, such as 'bigquery'
+                     or 'storage'.
+
+        :type credentials: `google.auth.credentials.Credentials`
+        :param credentials: certificates to connect to GCP.
+
+        :returns: Resource object to interact with GCP 
+        """
+        if not credentials:
+            
+        
