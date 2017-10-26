@@ -1,118 +1,56 @@
-from flask import Flask, render_template, request
-from google.auth import app_engine
-import googleapiclient.discovery as disco
-import google.auth
+#MIT License
+#
+#Copyright (c) 2017 Willian Fuks
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
+
 import uuid
-from config import config
 import datetime
-import time
+import google.auth
+import gae.exporter.utils as utils
+from flask import Flask 
+from config import config
+from gae.exporter.connector.gcp import GCPService
 
-yest_date = (datetime.datetime.now() +
-              datetime.timedelta(days=-2))
-
-cre = app_engine.Credentials()
+cre, _ = google.auth.default()
 
 app = Flask(__name__)
+bq_service = GCPService('bigquery', cre) 
 
 @app.route("/queue_export", methods=['POST'])
 def queue_export():
-    try:
-        bc = disco.build('bigquery', 'v2', credentials=cre)
-        yest_str = yest_date.strftime("%Y%m%d%S")
-        job = bc.jobs().insert(projectId='dafiti-analytics',
-             body=load_bq_job(load_query(config['query_path']),
-                              config['project_id'],
-                              table_id='example_dataproc')).execute(num_retries=3)
-    except Exception as err:
-        return str(err)
-    poll_job(bc, job)
+    (project_id, dataset_id, table_id, query_path,
+     output) = utils.load_config(config)
 
-    try:
-        dest = 'gs://lbanor/dataproc_example/{}/result.gz'
-        print 'DEST!!!! ', dest
-        job_config = load_extract_job('dafiti-analytics',
-            dest.format(yest_date.strftime("%Y-%m-%d")))
-        print 'JOB CONFIG: ', job_config
-        job = bc.jobs().insert(projectId='dafiti-analytics',
-            body=job_config).execute(num_retries=3)
-
-    except Exception as e:
-        return str(e)
-
-    return "finished"
+    query = utils.load_query(query_path, project_id, dataset_id, table_id)
+    query_job_body = utils.load_query_job_body(query,
+                                               project_id,
+                                               dataset_id,
+                                               table_id)
+    job = bq_service.execute_job(project_id, body)
+    bq_service.poll_job(job)                
+    
+    extract_job_body = utils.load_extract_job_body(project_id,
+        output.format(date=utils.load_yesterday_date().strftime("%Y-%m-%d"),
+        dataset_id,
+        table_id)
+   return "finished"
 
 
-def poll_job(service, job):
-    """Waits for a job to complete."""
-
-    request = service.jobs().get(
-        projectId=job['jobReference']['projectId'],
-        jobId=job['jobReference']['jobId'])
-
-    while True:
-        result = request.execute(num_retries=2)
-
-        if result['status']['state'] == 'DONE':
-            if 'errorResult' in result['status']:
-                raise RuntimeError(result['status']['errorResult'])
-            return
-        time.sleep(1)
-
-
-def load_bq_job(query,
-                project_id,
-                dataset_id='simona',
-                table_id='example_dataproc2'):
-    return {'jobReference': {
-                'projectId': project_id,
-                'jobId': str(uuid.uuid4())
-                },
-            'configuration': {
-                'query': {
-                    'destinationTable': {
-                        'datasetId': dataset_id,
-                        'tableId': table_id,
-                        'projectId': project_id
-                         },
-                    'maximumBytesBilled': 100000000000,
-                    'query': query,
-                    'useLegacySql': False,
-                    'writeDisposition': 'WRITE_TRUNCATE'
-                    }
-                }
-            }
-
-def load_query(query_path):
-    yest_str = yest_date.strftime("%Y%m%d")
-    result = open(query_path).read().format(project_id=config['project_id'],
-        dataset_id=config['dataset_id'],
-        table_id=config['table_id'],
-        date=yest_str)
-
-    return result
-
-def load_extract_job(project_id,
-                     destination,
-                     dataset_id='simona',
-                     table_id='example_dataproc',
-                     format='CSV',
-                     compression='GZIP'):
-                     
-    return {
-        'jobReference': {
-            'projectId': project_id,
-            'jobId': str(uuid.uuid4())
-        },
-        'configuration': {
-            'extract': {
-                'sourceTable': {
-                    'projectId': project_id,
-                    'datasetId': dataset_id,
-                    'tableId': table_id,
-                },
-                'destinationUris': [destination],
-                'destinationFormat': format,
-                'compression': compression
-            }
-        }
-    }

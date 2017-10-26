@@ -25,7 +25,7 @@ by a GAE Cron job.
 """
 
 
-from flask import Flask, render_template, request
+from flask import Flask
 from google.appengine.api import taskqueue
 
 

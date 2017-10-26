@@ -32,10 +32,10 @@ def session_gae(session):
     session.install('pytest', 'pytest-cov', 'mock')
 
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
-                                  'google_appengine/')}
+                                  'google_appengine/:./')}
 
     session.run(
         'py.test',
-        'tests/unit/gae/exporter/test_exporter.py')
+        'tests/unit/gae/')
 
 
