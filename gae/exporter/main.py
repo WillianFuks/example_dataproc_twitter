@@ -24,8 +24,9 @@
 by a GAE Cron job.
 """
 
+import datetime
 
-from flask import Flask
+from flask import Flask, request
 from google.appengine.api import taskqueue
 
 
@@ -36,7 +37,29 @@ def export_customers():
     """When this method is invoked a new task is added to the queue where
     eventually data from BigQuery is exported to GCS.
     """
-    task = taskqueue.add(url='/queue_export', target='worker')
+    date = process_url_date(request.args)
+    task = taskqueue.add(url='/queue_export',
+                         target='worker',
+                         params={'date': date})
     return "Taks {} enqued, ETA {}".format(task.name, task.eta)
 
-    
+
+def process_url_date(args):
+    """Gets the variable ``date`` from URL. 
+
+    :type args: dict
+    :param args: dict containing variables sent in URL request.
+
+    :raises: `ValueError` if ``date`` is not in format "%Y-%m-%d" and is
+             not null.
+
+    :rtype: str
+    :returns: `None` is `date` is empty or a string representation of date
+    """
+    date = args.get('date')
+    if date:
+        try:
+            datetime.datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise
+    return date

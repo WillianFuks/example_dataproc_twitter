@@ -27,7 +27,7 @@ import webtest
 import googleapiclient
 import unittest
 from google.appengine.ext import testbed
-from gae.exporter.main import app
+from gae.exporter.main import app, process_url_date
 
 from google.appengine.api import taskqueue
 
@@ -46,10 +46,24 @@ class TestExporterService(unittest.TestCase):
 
 
     def test_added_to_queue(self):
-        response = self.test_app.get("/export_customers")
+        response = self.test_app.get("/export_customers?date=2017-10-10")
         self.assertEqual(response.status_int, 200)
 
         tasks = self.taskqueue_stub.get_filtered_tasks()
         self.assertEqual(1, len(tasks)) 
         self.assertEqual(tasks[0].url, '/queue_export')
 
+
+    def test_process_url_date(self):
+        expected = None
+        result = process_url_date({})
+        self.assertEqual(expected, result)
+
+        expected = "2017-10-10"
+        result = process_url_date({"date": "2017-10-10"})
+        self.assertEqual(expected, result)
+
+        with self.assertRaises(ValueError):
+            process_url_date({"date": "20171010"})
+    
+ 

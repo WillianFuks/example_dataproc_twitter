@@ -1,7 +1,0 @@
-flask
-six
-pyasn1
-pyasn1_modules
-google-auth
-google-api-python-client
-google-auth-httplib2

@@ -21,36 +21,31 @@
 #SOFTWARE.
 
 
-import uuid
 import datetime
-import google.auth
 import gae.exporter.utils as utils
 from flask import Flask 
 from config import config
 from gae.exporter.connector.gcp import GCPService
 
-cre, _ = google.auth.default()
-
 app = Flask(__name__)
-bq_service = GCPService('bigquery', cre) 
+bq_service = GCPService('bigquery') 
+
 
 @app.route("/queue_export", methods=['POST'])
-def queue_export():
+def export():
     (project_id, dataset_id, table_id, query_path,
      output) = utils.load_config(config)
 
     query = utils.load_query(query_path, project_id, dataset_id, table_id)
-    query_job_body = utils.load_query_job_body(query,
-                                               project_id,
-                                               dataset_id,
-                                               table_id)
-    job = bq_service.execute_job(project_id, body)
-    bq_service.poll_job(job)                
-    
+    query_job_body = utils.load_query_job_body(query, project_id,
+        dataset_id, table_id)
+
+    job = bq_service.execute_job(project_id, query_job_body)
+    bq_service.poll_job(job)
+   
     extract_job_body = utils.load_extract_job_body(project_id,
-        output.format(date=utils.load_yesterday_date().strftime("%Y-%m-%d"),
-        dataset_id,
-        table_id)
-   return "finished"
+        output.format(date=utils.get_yesterday_date().strftime("%Y-%m-%d")),
+        dataset_id, table_id)
 
-
+    bq_service.execute_job(project_id, extract_job_body)
+    return "finished"

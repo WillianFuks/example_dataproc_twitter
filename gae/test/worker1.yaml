@@ -1,8 +1,0 @@
-runtime: python27
-api_version: 1
-threadsafe: true
-service: worker1
-
-handlers:
-- url: /.*
-  script: worker1.app

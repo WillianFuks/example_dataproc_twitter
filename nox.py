@@ -21,7 +21,10 @@
 #SOFTWARE.
 
 
-def session_gae(session):
+import os
+
+
+def session_unit_gae(session):
     """This session tests only the tests associated to google AppEngine
     folder. To run it, type `nox --session gae`
     """
@@ -36,6 +39,34 @@ def session_gae(session):
 
     session.run(
         'py.test',
-        'tests/unit/gae/')
+        'tests/unit/gae/',
+        '--cov=.',
+        '--cov-config=.coveragerc',
+        '--cov-report=html')
+
+def session_system_gae(session):
+    """Runs integration tests. As this runs a real query against BigQuery,
+    the environemnt must have ``GOOGLE_APPLICATION_CREDENTIALS`` set pointing
+    to ``/key.json`` where the secrets service json must be located.
+    """
+    session.interpreter = 'python2.7'
+    session.virtualenv_dirname = 'system-gae'
+
+    session.install('-r', 'gae/exporter/requirements.txt')
+    session.install('--upgrade', 'google-cloud-bigquery')
+
+    session.install('pytest', 'pytest-cov', 'mock')
+
+    if not os.path.isfile:
+        raise RuntimeError("File /key.json not found. Please make sure "
+                           "to create this file with the service credentials "
+                           "in order to run the integration tests")
+
+    session.env = {'PYTHONPATH': ':./',
+                   'GOOGLE_APPLICATION_CREDENTIALS': '/key.json'}
+
+    session.run(
+        'py.test',
+        'tests/system/gae/')
 
 
