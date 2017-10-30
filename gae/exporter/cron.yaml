@@ -1,7 +1,7 @@
 #MIT License
-#
+# 
 #Copyright (c) 2017 Willian Fuks
-#
+# 
 #Permission is hereby granted, free of charge, to any person obtaining a copy
 #of this software and associated documentation files (the "Software"), to deal
 #in the Software without restriction, including without limitation the rights
@@ -20,12 +20,9 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-service: exporter
-runtime: python27
-api_version: 1
-threadsafe: true
 
-handlers:
-- url: /.*
-  script: main.app
-  login: admin
+cron:
+- description: daily export job
+  url: /export_customers
+  target: exporter
+  schedule: every day 10:00
