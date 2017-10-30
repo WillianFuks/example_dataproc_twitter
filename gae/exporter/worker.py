@@ -22,10 +22,10 @@
 
 
 import datetime
-import gae.exporter.utils as utils
+import utils as utils
 from flask import Flask 
 from config import config
-from gae.exporter.connector.gcp import GCPService
+from connector.gcp import GCPService
 
 app = Flask(__name__)
 bq_service = GCPService('bigquery') 
@@ -33,19 +33,18 @@ bq_service = GCPService('bigquery')
 
 @app.route("/queue_export", methods=['POST'])
 def export():
-    (project_id, dataset_id, table_id, query_path,
-     output) = utils.load_config(config)
+    date = request.args.get('date')
+    query = utils.load_query_job_body(date, **config)
 
-    query = utils.load_query(query_path, project_id, dataset_id, table_id)
-    query_job_body = utils.load_query_job_body(query, project_id,
-        dataset_id, table_id)
+    print query_job_body
+    print
+    print
 
     job = bq_service.execute_job(project_id, query_job_body)
     bq_service.poll_job(job)
    
-    extract_job_body = utils.load_extract_job_body(project_id,
-        output.format(date=utils.get_yesterday_date().strftime("%Y-%m-%d")),
-        dataset_id, table_id)
+    extract_job_body = utils.load_extract_job_body(date, **config)
+    print extract_job_body
 
     bq_service.execute_job(project_id, extract_job_body)
     return "finished"

@@ -36,34 +36,49 @@ def get_yesterday_date():
     return (datetime.datetime.now() +
              datetime.timedelta(days=-1))
 
-def load_query_job_body(query, project_id, dataset_id, table_id):
+def load_query_job_body(date, **kwargs):
     """Returns the body to be used in a query job.
 
-    :type query: str
-    :param query: query string to run against BQ.
+    :type date: str
+    :param date: date to set filtering in query results.
 
-    :type project_id: str
-    :param project: project where to save resulting job.
+    :type kwargs:
+      :type source.query_path: str
+      :param query: query string to run against BQ.
 
-    :type dataset_id: str
-    :param dataset_id: dataset where to save resulting job.
+      :type source.project_id: str
+      :param source.project: project where to run query from.
 
-    :type table_id: str
-    :param table_id: table where to save resulting job.
+      :type source.dataset_id: str
+      :param source.dataset_id: dataset where to run query from.
+
+      :type source.table_id: str
+      :param source.table_id: table where to run query from.
+
+      :type destination.table_id: str
+      :param destination.table_id: table_id where results should be saved.
+
+      :type destination.dataset_id: str
+      :param destination.dataset_id: dataset_id where results should be saved.
+
+      :type destination.project_id: str
+      :param destination.project_id: project_id where results should be saved.
 
     :rtype: dict
     :returns: dict containing body to setup job execution.
     """
+    query = load_query(date, **kwargs)
+    dest = kwargs['jobs']['query_job']['destination']
     return {'jobReference': {
-                'projectId': project_id,
+                'projectId': dest['project_id'],
                 'jobId': str(uuid.uuid4())
                 },
             'configuration': {
                 'query': {
                     'destinationTable': {
-                        'datasetId': dataset_id,
-                        'tableId': table_id,
-                        'projectId': project_id
+                        'datasetId': dest['dataset_id'],
+                        'tableId': dest['table_id'],
+                        'projectId': dest['project_id']
                          },
                     'maximumBytesBilled': 100000000000,
                     'query': query,
@@ -74,68 +89,64 @@ def load_query_job_body(query, project_id, dataset_id, table_id):
             }
 
 
-def load_query(query_path, project_id, dataset_id, table_id):
+def load_query(date=None, **kwargs):
     """Reads a query from a source file.
 
-    :type query_path: str
-    :param query_path: location where to find the query file.
+    :type date: str
+    :param date: which date to filter on query results.
 
-    :type project_id: str
-    :param project_id: project id to format query.
+    :param kwargs:
+      :type query_path: str
+      :param query_path: location where to find the query file.
 
-    :type dataset_id: str
-    :param dataset_id: dataset_id to format query.
+      :type source.project_id: str
+      :param source.project_id: project id to format query.
 
-    :type table_id: str
-    :param table_id: table_id to format query.
+      :type source.dataset_id: str
+      :param source.dataset_id: dataset_id to format query.
+
+      :type source.table_id: str
+      :param source.table_id: table_id to format query.
     """
-    yest_str = get_yesterday_date().strftime("%Y%m%d")
-    result = open(query_path).read().format(project_id=project_id,
-                                            dataset_id=dataset_id,
-                                            table_id=table_id,
-                                            date=yest_str).strip()
+    source = kwargs['jobs']['query_job']['source']
+    date_str = get_yesterday_date().strftime("%Y%m%d") if not date else date
+    result = open(source['query_path']).read().format(project_id=source['project_id'],
+                                            dataset_id=source['dataset_id'],
+                                            table_id=source['table_id'],
+                                            date=date_str).strip()
     return result
 
 
-def load_extract_job_body(project_id,
-                          destination,
-                          dataset_id,
-                          table_id,
-                          format='CSV',
-                          compression='GZIP'):
+def load_extract_job_body(date=None, **kwargs):
+    """Returns json config to run extract jobs in BigQuery.
+
+    :type date: str
+    :param date: used to setup output path in GCS. If None then defaults to 
+                 yesterday's date.
+
+    :param kwargs:
+      :type project_id: str
+      
+
+    value = kwargs['jobs']['extract_job']
+    output = value['output'].format(date=get_yesterday_date().strftime(
+        "%Y-%m-%d")) if not date else date
 
     return {
         'jobReference': {
-            'projectId': project_id,
+            'projectId': value['project_id'],
             'jobId': str(uuid.uuid4())
         },
         'configuration': {
             'extract': {
                 'sourceTable': {
-                    'projectId': project_id,
-                    'datasetId': dataset_id,
-                    'tableId': table_id,
+                    'projectId': value['project_id'],
+                    'datasetId': value['dataset_id'],
+                    'tableId': value['table_id'],
                 },
-                'destinationUris': [destination],
-                'destinationFormat': format,
-                'compression': compression
+                'destinationUris': [output],
+                'destinationFormat': value['format'],
+                'compression': value['compression']
             }
         }
     }
-
-
-def load_config(config):
-    """Returns values of file config as list for asserting variables.
-
-    :type config: dict
-    :param config: config values for setting up jobs
-
-    :rtype: list
-    :returns: list of specified variables
-    """
-    return [config['project_id'],
-            config['dataset_id'],
-            config['table_id'],
-            config['query_path'],
-            config['output']]
- 

@@ -34,6 +34,11 @@ def session_unit_gae(session):
     session.install('-r', 'gae/exporter/requirements.txt')
     session.install('pytest', 'pytest-cov', 'mock')
 
+    if not os.path.isdir('/google-cloud-sdk/platform/google_appengine/'):
+        raise RuntimeError("Please install gcloud components for app engine"
+                           " in order to simulate an AppEngine environment "
+                           " for testing")
+
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
                                   'google_appengine/:./')}
 

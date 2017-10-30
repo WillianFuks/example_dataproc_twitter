@@ -30,13 +30,45 @@ import gae.exporter.utils as utils
 
 class TestUtils(unittest.TestCase):
 
+    @staticmethod
+    def load_mock_config():
+        return {"jobs":{
+                "query_job": {
+                    "source": {
+                        "table_id": "source_table",
+                        "dataset_id": "source_dataset",
+                        "project_id": "project123",
+                        "query_path": ("tests/unit/data/gae/"
+                                       "exporter/test_query.sql")
+                     },
+                     "destination": {
+                        "table_id": "dest_table",
+                        "dataset_id": "dest_dataset",
+                        "project_id": "project123"
+                     }
+
+                },
+                "extract_job": {
+                    "table_id": "extract_table",
+                    "dataset_id": "extract_dataset",
+                    "project_id": "project123",
+                    "output": "output/result.gz"
+                }
+            }
+           }
+
+
     def test_get_yesterday_date(self):
         expected = datetime.datetime.now() + datetime.timedelta(days=-1)
         result = utils.get_yesterday_date()
         self.assertEqual(expected.date(), result.date())
 
+
     @mock.patch('gae.exporter.utils.uuid')
     def test_load_query_job_body(self, uuid_mock):
+        query_str = ("SELECT 1 FROM `project123.source_dataset.source_table` "
+                     "WHERE date={}")
+
         expected = {'jobReference': {
                 'projectId': 'project123',
                 'jobId': 'name'
@@ -44,35 +76,46 @@ class TestUtils(unittest.TestCase):
             'configuration': {
                 'query': {
                     'destinationTable': {
-                        'datasetId': 'dataset_id',
-                        'tableId': 'table_id',
+                        'datasetId': 'dest_dataset',
+                        'tableId': 'dest_table',
                         'projectId': 'project123'
                          },
                     'maximumBytesBilled': 100000000000,
-                    'query': "select 1",
+                    'query': "",
                     'useLegacySql': False,
                     'writeDisposition': 'WRITE_TRUNCATE'
                     }
                 }
             }
         uuid_mock.uuid4.return_value = 'name'
-
-        result = utils.load_query_job_body("select 1",
-                                           "project123",
-                                           "dataset_id",
-                                           "table_id")
-
+        result = utils.load_query_job_body(None, **self.load_mock_config())
+        expected['configuration']['query']['query'] = query_str.format(
+            utils.get_yesterday_date().strftime("%Y%m%d"))
+        print expected['configuration']['query']['query']
+        print
+        print
+        print result['configuration']['query']['query']
         self.assertEqual(expected, result)
+
+        result = utils.load_query_job_body("20171010",
+            **self.load_mock_config())
+        expected['configuration']['query']['query'] = query_str.format(
+            utils.get_yesterday_date().strftime("20171010"))
+        self.assertEqual(expected, result)
+
+
 
 
     def test_load_query(self):
-        expected = "select 1 from project123.dataset_id.table_id"
-        result = utils.load_query(
-            'tests/unit/data/gae/exporter/test_query.sql',
-            'project123',
-            'dataset_id',
-            'table_id')
-        self.assertEqual(expected, result)
+        expected = ("SELECT 1 FROM `project123.source_dataset.source_table`"
+            " WHERE date={}")
+        result = utils.load_query(None, **self.load_mock_config())
+        self.assertEqual(expected.format(
+            utils.get_yesterday_date().strftime("%Y%m%d")), result)
+
+        result = utils.load_query("20171010", **self.load_mock_config())
+        self.assertEqual(expected.format("20171010"), result)
+
 
 
     @mock.patch('gae.exporter.utils.uuid')
@@ -101,17 +144,4 @@ class TestUtils(unittest.TestCase):
                                              'gs://bucket/folder',
                                              'dataset_id',
                                              'table_id')
-        self.assertEqual(expected, result)
-
-
-    def test_load_config(self):
-        config = {'project_id': 'project123',
-                  'dataset_id': 'dataset_id',
-                  'table_id': 'table_id',
-                  'query_path': 'path/to/query.sql',
-                  'output': 'output'}
-    
-        expected = ['project123', 'dataset_id', 'table_id',
-                    'path/to/query.sql', 'output']
-        result = utils.load_config(config)
         self.assertEqual(expected, result)
