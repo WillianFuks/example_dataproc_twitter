@@ -20,42 +20,19 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-
+import json
 import unittest
 import mock
 import datetime
 
 import gae.exporter.utils as utils
 
-
 class TestUtils(unittest.TestCase):
 
     @staticmethod
     def load_mock_config():
-        return {"jobs":{
-                "query_job": {
-                    "source": {
-                        "table_id": "source_table",
-                        "dataset_id": "source_dataset",
-                        "project_id": "project123",
-                        "query_path": ("tests/unit/data/gae/"
-                                       "exporter/test_query.sql")
-                     },
-                     "destination": {
-                        "table_id": "dest_table",
-                        "dataset_id": "dest_dataset",
-                        "project_id": "project123"
-                     }
-
-                },
-                "extract_job": {
-                    "table_id": "extract_table",
-                    "dataset_id": "extract_dataset",
-                    "project_id": "project123",
-                    "output": "output/result.gz"
-                }
-            }
-           }
+        data = open('tests/unit/data/gae/exporter/test_config.json').read()
+        return json.loads(data)
 
 
     def test_get_yesterday_date(self):
@@ -91,10 +68,6 @@ class TestUtils(unittest.TestCase):
         result = utils.load_query_job_body(None, **self.load_mock_config())
         expected['configuration']['query']['query'] = query_str.format(
             utils.get_yesterday_date().strftime("%Y%m%d"))
-        print expected['configuration']['query']['query']
-        print
-        print
-        print result['configuration']['query']['query']
         self.assertEqual(expected, result)
 
         result = utils.load_query_job_body("20171010",
@@ -102,8 +75,6 @@ class TestUtils(unittest.TestCase):
         expected['configuration']['query']['query'] = query_str.format(
             utils.get_yesterday_date().strftime("20171010"))
         self.assertEqual(expected, result)
-
-
 
 
     def test_load_query(self):
@@ -121,6 +92,7 @@ class TestUtils(unittest.TestCase):
     @mock.patch('gae.exporter.utils.uuid')
     def test_load_extract_job_body(self, uuid_mock):
         uuid_mock.uuid4.return_value = 'name'
+        dest = 'gs://bucket/output/{}/result.gz'
         expected = {
             'jobReference': {
                 'projectId': 'project123',
@@ -130,18 +102,23 @@ class TestUtils(unittest.TestCase):
                 'extract': {
                     'sourceTable': {
                         'projectId': 'project123',
-                        'datasetId': 'dataset_id',
-                        'tableId': 'table_id',
+                        'datasetId': 'extract_dataset',
+                        'tableId': 'extract_table',
                     },
-                    'destinationUris': ['gs://bucket/folder'],
+                    'destinationUris': [],
                     'destinationFormat': 'CSV',
                     'compression': 'GZIP'
                 }
             }
         }
  
-        result = utils.load_extract_job_body('project123',
-                                             'gs://bucket/folder',
-                                             'dataset_id',
-                                             'table_id')
+        result = utils.load_extract_job_body(None, **self.load_mock_config())
+        expected['configuration']['extract']['destinationUris'] = [
+            dest.format(utils.get_yesterday_date().strftime("%Y-%m-%d"))]
         self.assertEqual(expected, result)
+
+        result = utils.load_extract_job_body("2017-10-10", **self.load_mock_config())
+        expected['configuration']['extract']['destinationUris'] = [
+            dest.format("2017-10-10")]
+
+

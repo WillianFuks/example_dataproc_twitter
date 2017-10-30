@@ -21,5 +21,8 @@ config={"jobs":{
                 "format": "CSV",
                 "compression": "GZIP"
             }
-        }
+        },
+       "general": {
+           "project_id": "dafiti-analytics"
        }
+      }

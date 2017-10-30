@@ -39,8 +39,10 @@ def session_unit_gae(session):
                            " in order to simulate an AppEngine environment "
                            " for testing")
 
+    # we set ``gae/exporter`` in PYTHONPATH as well since this becomes
+    # the root directory when App Engine starts the wsgi server
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
-                                  'google_appengine/:./')}
+                                  'google_appengine/:./:.gae/exporter/')}
 
     session.run(
         'py.test',

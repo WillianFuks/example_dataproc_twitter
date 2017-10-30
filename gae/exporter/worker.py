@@ -23,7 +23,7 @@
 
 import datetime
 import utils as utils
-from flask import Flask 
+from flask import Flask, request 
 from config import config
 from connector.gcp import GCPService
 
@@ -34,17 +34,17 @@ bq_service = GCPService('bigquery')
 @app.route("/queue_export", methods=['POST'])
 def export():
     date = request.args.get('date')
-    query = utils.load_query_job_body(date, **config)
+    query_job_body = utils.load_query_job_body(date, **config)
 
-    print query_job_body
-    print
-    print
-
-    job = bq_service.execute_job(project_id, query_job_body)
-    bq_service.poll_job(job)
-   
+    try:
+        job = bq_service.execute_job(config['general']['project_id'],
+            query_job_body)
+        bq_service.poll_job(job)
+    except Exception as e:
+        print str(e) 
     extract_job_body = utils.load_extract_job_body(date, **config)
     print extract_job_body
 
-    bq_service.execute_job(project_id, extract_job_body)
+    bq_service.execute_job(config['general']['project_id'],
+        extract_job_body)
     return "finished"

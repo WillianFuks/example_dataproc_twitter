@@ -21,48 +21,36 @@
 #SOFTWARE.
 
 
+import json
 import webtest
 import unittest
 import mock
+import gae.exporter.worker as worker
 from gae.exporter.worker import app
+from gae.exporter import utils
 
 
 class TestWorkerService(unittest.TestCase):
     test_app = webtest.TestApp(app)
 
+    @staticmethod
+    def load_mock_config():
+        data = open('tests/unit/data/gae/exporter/test_config.json').read()
+        return json.loads(data)
+
+
     @mock.patch('gae.exporter.utils.uuid')
     @mock.patch('gae.exporter.worker.bq_service')
-    @mock.patch('gae.exporter.worker.utils.load_config')
-    def test_export(self, utils_mock, con_mock, uuid_mock):
+    def test_export(self, con_mock, uuid_mock):
         uuid_mock.uuid4.return_value = 'name'
-        query_job_body = {'configuration': {'query':
-            {'query': 'select 1 from project123.dataset_id.table_id',
-             'writeDisposition': 'WRITE_TRUNCATE',
-             'destinationTable': {'projectId': 'project123',
-                 'tableId': 'table_id',
-                 'datasetId': 'dataset_id'},
-             'maximumBytesBilled': 100000000000,
-             'useLegacySql': False}},
-             'jobReference': {'projectId': 'project123',
-             'jobId': 'name'}}
+        worker.config = self.load_mock_config()
+        query_job_body = utils.load_query_job_body("2017-10-10", **worker.config)
+        extract_job_body = utils.load_extract_job_body("2017-10-10", **worker.config)
 
-        extract_job_body = {'configuration': {'extract':
-            {'destinationFormat': 'CSV',
-             'destinationUris': ['output'],
-             'sourceTable': {'projectId': 'project123',
-                 'tableId': 'table_id',
-                 'datasetId': 'dataset_id'},
-             'compression': 'GZIP'}},
-             'jobReference': {'projectId': 'project123',
-                 'jobId': 'name'}}
-
-        utils_mock.return_value = ['project123',
-            'dataset_id', 'table_id',
-            'tests/unit/data/gae/exporter/test_query.sql',
-            'output']
         job_mock = mock.Mock()
         con_mock.execute_job.return_value = 'job'
-        response = self.test_app.post("/queue_export")
+        response = self.test_app.post("/queue_export?date=2017-10-10")
+
         con_mock.execute_job.assert_any_call(*['project123',
                                               query_job_body])
         con_mock.execute_job.assert_any_call(*['project123',

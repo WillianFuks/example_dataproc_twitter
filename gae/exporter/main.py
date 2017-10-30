@@ -43,7 +43,6 @@ def export_customers():
                          params={'date': date})
     return "Taks {} enqued, ETA {}".format(task.name, task.eta)
 
-
 def process_url_date(args):
     """Gets the variable ``date`` from URL. 
 

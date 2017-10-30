@@ -126,7 +126,7 @@ def load_extract_job_body(date=None, **kwargs):
 
     :param kwargs:
       :type project_id: str
-      
+    """      
 
     value = kwargs['jobs']['extract_job']
     output = value['output'].format(date=get_yesterday_date().strftime(
