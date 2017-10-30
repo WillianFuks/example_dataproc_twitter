@@ -11,7 +11,6 @@ FROM(
 WHERE TRUE
 AND _TABLE_SUFFIX = '{date}'
 AND EXISTS(SELECT 1 FROM UNNEST(hits) WHERE ecommerceAction.action_type IN ('2', '3', '6'))
-LIMIT 1000
 ),
 UNNEST(interactions)
 

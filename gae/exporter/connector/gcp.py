@@ -57,7 +57,7 @@ class GCPService(object):
         # in AppEngine environment
         if not credentials:
             credentials = app_engine.Credentials()
-            credentials = service_account.Credentials.from_service_account_file('key.json')
+            # credentials = service_account.Credentials.from_service_account_file('key.json')
         
         self.con = disco.build(name,
                                self.available_services[name],

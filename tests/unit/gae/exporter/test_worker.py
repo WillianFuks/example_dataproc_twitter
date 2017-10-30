@@ -33,28 +33,31 @@ from gae.exporter import utils
 class TestWorkerService(unittest.TestCase):
     test_app = webtest.TestApp(app)
 
+
     @staticmethod
     def load_mock_config():
         data = open('tests/unit/data/gae/exporter/test_config.json').read()
         return json.loads(data)
 
 
+    @mock.patch('gae.exporter.worker.request')
     @mock.patch('gae.exporter.utils.uuid')
     @mock.patch('gae.exporter.worker.bq_service')
-    def test_export(self, con_mock, uuid_mock):
+    def test_export(self, con_mock, uuid_mock, request_mock):
         uuid_mock.uuid4.return_value = 'name'
+        request_mock.form.get.return_value = '20171010'
         worker.config = self.load_mock_config()
-        query_job_body = utils.load_query_job_body("2017-10-10", **worker.config)
-        extract_job_body = utils.load_extract_job_body("2017-10-10", **worker.config)
+        query_job_body = utils.load_query_job_body("20171010", **worker.config)
+
+        extract_job_body = utils.load_extract_job_body("20171010", **worker.config)
 
         job_mock = mock.Mock()
         con_mock.execute_job.return_value = 'job'
-        response = self.test_app.post("/queue_export?date=2017-10-10")
+        response = self.test_app.post("/queue_export?date=20171010")
 
         con_mock.execute_job.assert_any_call(*['project123',
                                               query_job_body])
         con_mock.execute_job.assert_any_call(*['project123',
                                               extract_job_body])
         self.assertEqual(response.status_int, 200)
-
 

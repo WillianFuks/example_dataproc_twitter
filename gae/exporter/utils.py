@@ -129,8 +129,8 @@ def load_extract_job_body(date=None, **kwargs):
     """      
 
     value = kwargs['jobs']['extract_job']
-    output = value['output'].format(date=get_yesterday_date().strftime(
-        "%Y-%m-%d")) if not date else date
+    date = get_yesterday_date().strftime("%Y-%m-%d") if not date else date
+    output = value['output'].format(date=date)
 
     return {
         'jobReference': {

@@ -46,7 +46,7 @@ class TestExporterService(unittest.TestCase):
 
 
     def test_added_to_queue(self):
-        response = self.test_app.get("/export_customers?date=2017-10-10")
+        response = self.test_app.get("/export_customers?date=20171010")
         self.assertEqual(response.status_int, 200)
 
         tasks = self.taskqueue_stub.get_filtered_tasks()
@@ -59,11 +59,11 @@ class TestExporterService(unittest.TestCase):
         result = process_url_date({})
         self.assertEqual(expected, result)
 
-        expected = "2017-10-10"
-        result = process_url_date({"date": "2017-10-10"})
+        expected = "20171010"
+        result = process_url_date({"date": "20171010"})
         self.assertEqual(expected, result)
 
         with self.assertRaises(ValueError):
-            process_url_date({"date": "20171010"})
+            process_url_date({"date": "2017-10-10"})
     
  

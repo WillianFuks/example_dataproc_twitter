@@ -49,16 +49,17 @@ def process_url_date(args):
     :type args: dict
     :param args: dict containing variables sent in URL request.
 
-    :raises: `ValueError` if ``date`` is not in format "%Y-%m-%d" and is
+    :raises: `ValueError` if ``date`` is not in format "%Y%m%d" and is
              not null.
 
     :rtype: str
     :returns: `None` is `date` is empty or a string representation of date
     """
     date = args.get('date')
+    # if ``date`` is defined then it was sent as parameter in the URL request
     if date:
         try:
-            datetime.datetime.strptime(date, "%Y-%m-%d")
+            datetime.datetime.strptime(date, "%Y%m%d")
         except ValueError:
             raise
     return date

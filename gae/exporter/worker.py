@@ -33,14 +33,19 @@ bq_service = GCPService('bigquery')
 
 @app.route("/queue_export", methods=['POST'])
 def export():
-    date = request.args.get('date')
-    query_job_body = utils.load_query_job_body(date, **config)
+    date = (None if request.form.get('date') == 'None' else
+        request.form.get('date'))
+   
+    query_job_body = utils.load_query_job_body(date,
+        **config)
 
     job = bq_service.execute_job(config['general']['project_id'],
         query_job_body)
     bq_service.poll_job(job)
-    extract_job_body = utils.load_extract_job_body(date, **config)
 
+    extract_job_body = utils.load_extract_job_body(date, **config)
+    #print extract_job_body
     bq_service.execute_job(config['general']['project_id'],
         extract_job_body)
+
     return "finished"
