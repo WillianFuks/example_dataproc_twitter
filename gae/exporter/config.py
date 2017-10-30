@@ -7,14 +7,14 @@ config={"jobs":{
                     "query_path": "queries/customers_interactions.sql"
                  },
                  "destination": {
-                    "table_id": "dataproc_example",
+                    "table_id": "example_dataproc",
                     "dataset_id": "simona",
                     "project_id": "dafiti-analytics"
                  }
 
             },
             "extract_job": {
-                "table_id": "dataproc_example",
+                "table_id": "example_dataproc",
                 "dataset_id": "simona",
                 "project_id": "dafiti-analytics",
                 "output": "gs://lbanor/dataproc_example/{date}/result.gz",

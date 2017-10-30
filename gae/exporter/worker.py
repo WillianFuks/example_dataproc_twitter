@@ -36,14 +36,10 @@ def export():
     date = request.args.get('date')
     query_job_body = utils.load_query_job_body(date, **config)
 
-    try:
-        job = bq_service.execute_job(config['general']['project_id'],
-            query_job_body)
-        bq_service.poll_job(job)
-    except Exception as e:
-        print str(e) 
+    job = bq_service.execute_job(config['general']['project_id'],
+        query_job_body)
+    bq_service.poll_job(job)
     extract_job_body = utils.load_extract_job_body(date, **config)
-    print extract_job_body
 
     bq_service.execute_job(config['general']['project_id'],
         extract_job_body)

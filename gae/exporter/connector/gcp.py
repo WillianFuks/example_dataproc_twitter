@@ -29,7 +29,7 @@ import time
 
 from google.auth import app_engine
 import googleapiclient.discovery as disco
-import google.auth
+from google.oauth2 import service_account
 
 class GCPService(object):
 
@@ -57,7 +57,7 @@ class GCPService(object):
         # in AppEngine environment
         if not credentials:
             credentials = app_engine.Credentials()
-            #credentials, _ = google.auth.default()
+            credentials = service_account.Credentials.from_service_account_file('key.json')
         
         self.con = disco.build(name,
                                self.available_services[name],
