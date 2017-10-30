@@ -122,14 +122,15 @@ def load_extract_job_body(date=None, **kwargs):
 
     :type date: str
     :param date: used to setup output path in GCS. If None then defaults to 
-                 yesterday's date.
+                 yesterday's date. The format expected is "%Y%m%d" and must
+                 be casted to "%Y-%m-%d".
 
     :param kwargs:
       :type project_id: str
     """      
-
     value = kwargs['jobs']['extract_job']
-    date = get_yesterday_date().strftime("%Y-%m-%d") if not date else date
+    date = (get_yesterday_date().strftime("%Y-%m-%d") if not date else
+       format_date(date))
     output = value['output'].format(date=date)
 
     return {
@@ -150,3 +151,19 @@ def load_extract_job_body(date=None, **kwargs):
             }
         }
     }
+
+
+def format_date(input_date, format="%Y-%m-%d"):
+    """Changes input date to a new format.
+
+    :type input_date: str
+    :param input_date: date string of format "%Y%m%d".
+
+    :type format: str
+    :param format: new format to port input date.
+
+    :rtype: str
+    :returns: date string in format `format`.
+    """
+    return datetime.datetime.strptime(input_date, "%Y%m%d").strftime(
+        format)

@@ -117,8 +117,13 @@ class TestUtils(unittest.TestCase):
             dest.format(utils.get_yesterday_date().strftime("%Y-%m-%d"))]
         self.assertEqual(expected, result)
 
-        result = utils.load_extract_job_body("2017-10-10", **self.load_mock_config())
+        result = utils.load_extract_job_body("20171010", **self.load_mock_config())
         expected['configuration']['extract']['destinationUris'] = [
             dest.format("2017-10-10")]
 
+
+    def test_format_date(self):
+        result = utils.format_date("20171010")
+        expected = "2017-10-10"
+        self.assertEqual(result, expected)
 
