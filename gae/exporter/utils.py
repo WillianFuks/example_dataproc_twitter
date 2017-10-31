@@ -116,7 +116,6 @@ def load_query(date=None, **kwargs):
                                             date=date_str).strip()
     return result
 
-
 def load_extract_job_body(date=None, **kwargs):
     """Returns json config to run extract jobs in BigQuery.
 
@@ -152,7 +151,6 @@ def load_extract_job_body(date=None, **kwargs):
         }
     }
 
-
 def format_date(input_date, format="%Y-%m-%d"):
     """Changes input date to a new format.
 
@@ -167,3 +165,25 @@ def format_date(input_date, format="%Y-%m-%d"):
     """
     return datetime.datetime.strptime(input_date, "%Y%m%d").strftime(
         format)
+
+def process_url_date(args):
+    """Gets the variable ``date`` from URL.
+
+    :type args: dict
+    :param args: dict containing variables sent in URL request.
+
+    :raises: `ValueError` if ``date`` is not in format "%Y%m%d" and is
+             not null.
+
+    :rtype: str
+    :returns: `None` is `date` is empty or a string representation of date
+    """
+    date = args.get('date')
+    # if ``date`` is defined then it was sent as parameter in the URL request
+    if date:
+        try:
+            datetime.datetime.strptime(date, "%Y%m%d")
+        except ValueError:
+            raise
+    return date
+

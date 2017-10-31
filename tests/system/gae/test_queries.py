@@ -25,6 +25,7 @@ import unittest
 
 from google.cloud.bigquery import Client
 
+
 bc = Client()
 
 

@@ -28,7 +28,7 @@ import datetime
 
 from flask import Flask, request
 from google.appengine.api import taskqueue
-
+from utils import process_url_date
 
 app = Flask(__name__)
 
@@ -42,24 +42,3 @@ def export_customers():
                          target='worker',
                          params={'date': date})
     return "Taks {} enqued, ETA {}".format(task.name, task.eta)
-
-def process_url_date(args):
-    """Gets the variable ``date`` from URL. 
-
-    :type args: dict
-    :param args: dict containing variables sent in URL request.
-
-    :raises: `ValueError` if ``date`` is not in format "%Y%m%d" and is
-             not null.
-
-    :rtype: str
-    :returns: `None` is `date` is empty or a string representation of date
-    """
-    date = args.get('date')
-    # if ``date`` is defined then it was sent as parameter in the URL request
-    if date:
-        try:
-            datetime.datetime.strptime(date, "%Y%m%d")
-        except ValueError:
-            raise
-    return date

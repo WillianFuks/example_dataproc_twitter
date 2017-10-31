@@ -127,3 +127,16 @@ class TestUtils(unittest.TestCase):
         expected = "2017-10-10"
         self.assertEqual(result, expected)
 
+
+    def test_process_url_date(self):
+        expected = None
+        result = utils.process_url_date({})
+        self.assertEqual(expected, result)
+
+        expected = "20171010"
+        result = utils.process_url_date({"date": "20171010"})
+        self.assertEqual(expected, result)
+
+        with self.assertRaises(ValueError):
+            utils.process_url_date({"date": "2017-10-10"})
+

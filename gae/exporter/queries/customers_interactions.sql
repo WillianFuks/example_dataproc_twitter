@@ -1,7 +1,7 @@
 #standardSQL
-CREATE TEMP FUNCTION process_sku(sku STRING) as(
-case when (char_length(sku) - char_length(regexp_replace(sku, r'-', '')) = 3) OR (char_length(sku) - char_length(regexp_replace(sku, r'-', '')) = 1) then regexp_extract(sku, r'(.*)-[0-9A-Z]+')
-     ELSE sku end
+CREATE TEMP FUNCTION process_sku(sku STRING) AS (
+  CASE WHEN (CHAR_LENGTH(sku) - CHAR_LENGTH(REGEXP_REPLACE(sku, r'-', '')) = 3) OR (CHAR_LENGTH(sku) - CHAR_LENGTH(REGEXP_REPLACE(sku, r'-', '')) = 1) THEN REGEXP_EXTRACT(sku, r'(.*)-[0-9A-Z]+')
+     ELSE sku END
 );
 
 

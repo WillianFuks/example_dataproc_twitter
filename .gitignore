@@ -104,3 +104,6 @@ ENV/
 
 # gcloud stuff
 key.json
+
+# project config
+config.py
