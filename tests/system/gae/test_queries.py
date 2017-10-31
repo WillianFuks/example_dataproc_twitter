@@ -45,14 +45,14 @@ class TestQueriesResults(unittest.TestCase):
         # orders by user_id and then by sku
         result = sorted(list(job.fetch_data()), key=lambda x: (x[0], x[1]))
         
-        print result
-
         expected = [(u'1', u'sku0', 1),
                     (u'1', u'sku0', 2),
                     (u'1', u'sku0', 3),
                     (u'1', u'sku1', 1),
                     (u'1', u'sku3', 1),
-                    (u'2', u'sku0', 1)]
+                    (u'2', u'sku0', 1),
+                    (u'3', u'sku0', 3),
+                    (u'3', u'sku1', 3)]
 
         self.assertEqual(result, expected)
 
