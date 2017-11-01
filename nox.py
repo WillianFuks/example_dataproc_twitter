@@ -60,7 +60,7 @@ def session_system_gae(session):
     session.virtualenv_dirname = 'system-gae'
 
     session.install('-r', 'gae/exporter/requirements.txt')
-    session.install('--upgrade', 'google-cloud-bigquery')
+    session.install('google-cloud-bigquery==0.27.0')
 
     session.install('pytest', 'pytest-cov', 'mock')
 

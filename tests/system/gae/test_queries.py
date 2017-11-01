@@ -36,7 +36,8 @@ class TestQueriesResults(unittest.TestCase):
         simulated_data = open(
             "tests/system/data/gae/test_query_customers.sql").read().strip()
         query = re.sub(r"`.*`", simulated_data, query)
-        query = re.sub(r"AND _TABLE_SUFFIX = '{date}'", "", query)
+        pattern = r"WHERE TRUE\n"
+        query = re.sub(pattern, pattern + '#', query)
 
         job = bc.run_sync_query(query)
         job.use_legacy_sql = False

@@ -21,15 +21,14 @@
 #SOFTWARE.
 
 
-import datetime
 import utils as utils
 from flask import Flask, request 
 from config import config
 from connector.gcp import GCPService
 
+
 app = Flask(__name__)
 bq_service = GCPService('bigquery') 
-
 
 @app.route("/queue_export", methods=['POST'])
 def export():
