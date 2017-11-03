@@ -1,0 +1,5 @@
+[run]
+omit = *.nox*
+    beam_jobs/*
+    gae/exporter/appengine_config.py
+    nox.py
