@@ -107,3 +107,10 @@ key.json
 
 # project config
 config.py
+
+# VIM tags
+tags
+
+# spark tests
+tests/system/data/dataproc/jobs/inter/
+tests/system/data/dataproc/jobs/results/

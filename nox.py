@@ -23,6 +23,8 @@
 
 import os
 
+import nox
+
 
 def session_unit_gae(session):
     """This session tests only the tests associated to google AppEngine
@@ -31,7 +33,7 @@ def session_unit_gae(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'unit-gae'
 
-    session.install('-r', 'gae/exporter/requirements.txt')
+    session.install('-r', 'tests/unit/gae/test_requirements.txt')
     session.install('pytest', 'pytest-cov', 'mock')
 
     if not os.path.isdir('/google-cloud-sdk/platform/google_appengine/'):
@@ -42,11 +44,11 @@ def session_unit_gae(session):
     # we set ``gae/exporter`` in PYTHONPATH as well since this becomes
     # the root directory when App Engine starts the wsgi server
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
-                                  'google_appengine/:./:.gae/exporter/')}
+                                  'google_appengine/:./:./gae/')}
 
     session.run(
         'py.test',
-        'tests/unit/gae/',
+        'tests/unit/gae/connector/test_storage.py',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')
@@ -75,5 +77,33 @@ def session_system_gae(session):
     session.run(
         'py.test',
         'tests/system/gae/')
+
+@nox.parametrize('py', ['2.7', '3.6'])
+def session_system_dataproc(session, py):
+    """For testing dataproc jobs the environment must have a spark cluster
+    available.
+    """
+    session.interpreter = 'python{}'.format(py)
+    session.virtualenv_dirname = 'system-dataproc-{}'.format(py)
+
+    session.install('pytest', 'pytest-cov', 'mock', 'numpy')
+
+    try:
+        import pyspark
+    except:
+        raise RuntimeError("Please install pyspark and spark clusters to run "
+                           "tests")
+
+    # setups environment to be able to see Spark cluster
+    session.env = {'PYTHONPATH': (':./'
+                   ':/usr/local/spark/python'
+                   ':/usr/local/spark/python/lib/py4j-0.10.4-src.zip')}
+
+    session.run(
+    'py.test',
+    'tests/system/dataproc/',
+    '--cov=.',
+    '--cov-config=.coveragerc',
+    '--cov-report=html')
 
 
