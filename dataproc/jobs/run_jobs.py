@@ -28,7 +28,7 @@ Runs Jobs against Spark.
 import sys
 import argparse
 
-#import pyspark
+import pyspark
 from factory import JobsFactory
 
 def get_alg(args):
@@ -47,14 +47,14 @@ def get_alg(args):
 
 def main():
     alg = get_alg(sys.argv[1:]).algorithm
-    print 'and the alg is ', alg
+    print('VALUE OF ALG ', alg)
     if alg:
         job = JobsFactory._factor_alg(alg)()
-        print 'and job is ', job
         args = job.process_base_sysargs(
             [e for e in sys.argv[1:] if 'algorithm' not in e])
-        print 'and args is ', args
-        #with pyspark.SparkContext() as sc: 
+        print('VALUE OF ARGS!!!! ', args)
+        with pyspark.SparkContext() as sc:
+            job.run(sc, args)
         #    job.transform_data(sc, args)
         #    job.build_marreco(sc, args)
     

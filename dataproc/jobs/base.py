@@ -29,6 +29,14 @@ Base Class for Algorithms in Spark.
 import abc
 import datetime
 import argparse
+import operator
+from collections import defaultdict
+
+from pyspark.sql import SparkSession
+from pyspark.sql import types as stypes
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JJavaError
+
 
 class JobsBase(object):
     """Base Class to run Jobs against Spark"""
@@ -106,28 +114,211 @@ class JobsBase(object):
 
 
     def transform_data(self, sc, args):
-        """Gets data from datajet and transforms so that Marreco can read
-        and use it properly. Each algorithm shall implement its own strategy
+        """Gets input data from GCS, transforms it and saves to intermediary
+        resuts so that our algorithms can read and use it properly. 
+
+        :type sc: `pyspark.SparkContext`
+        :param sc: spark context where jobs are run against.
+
+        :type args: namedtuple
+        :param args: input values to setup job transformation.
+
+          :type args.days_init: int
+          :param args.days_init: total days to come back in time relative to
+                                 today's date to set at what date the job
+                                 should start scanning from.
+
+          :type args.days_end: int
+          :param args.days_end: just like ``days_init`` but sets the end limit
+                                to when stop reading data.
+
+          :type args.source_uri: str
+          :param args.source_uri: URI where our input data is located in GCS.
+
+          :type args.inter_uri: str
+          :param args.inter_uri: URI where to save intermediary results.
+
+          :type args.force: str
+          :param args.force: if ``yes`` then overwrites intermediary results
+                             that may already exist.
+
+          :type args.neighbor_uri: str
+          :param neighbor_uri: URI to where save resuts.
+
+          :type args.w_browse: float
+          :param args.w_browse: score associated to viewing a product
+                                description page.
+
+          :type args.w_basket: float
+          :param args.w_basket: score associated to adding a product
+                                to the basket.
+
+          :type args.w_purchase: float
+          :param args.w_purchase: score associated to buying the product.
         """
-        pass
+        spark = SparkSession(sc)
+        for day in range(args.days_init, args.days_end - 1, -1):
+            print('PROCESSING DAY ', day)
+            formatted_day = self.get_formatted_date(day)
+            print('FORMATTED DATE: ', formatted_day)
+            source_uri = args.source_uri.format(formatted_day)
+            inter_uri = args.inter_uri.format(formatted_day)
+            try:
+                inter_data = spark.read.json(inter_uri,
+                    schema = self.load_users_schema()).first()
+
+                if args.force == 'yes' or not inter_data:
+                    self.process_day_input(sc, source_uri, inter_uri, 
+                        args, mode='overwrite')
+                print('IVE WORKED THROUGH TRY')
+            except (Py4JJavaError, AnalysisException):
+                print('EXCEPT WAS INITIATED')
+                self.process_day_input(sc, source_uri, inter_uri, args)
+
+
+    @staticmethod
+    def load_users_schema():
+        """Loads schema with data type [user, [(sku, score), (sku, score)]]
+
+        :rtype: `pyspark.sql.type.StructType`
+        :returns: schema speficiation for user -> (sku, score) data.
+        """
+        return stypes.StructType(fields=[
+        	stypes.StructField("user", stypes.StringType()),
+        	 stypes.StructField('interactions', stypes.ArrayType(
+        	  stypes.StructType(fields=[stypes.StructField('item', 
+        	   stypes.StringType()), stypes.StructField('score', 
+        	    stypes.FloatType())])))])
 
 
     @abc.abstractmethod
-    def build_marreco(self, sc, args):
-        """Main method for each algorithm where results are calculated, such 
-        as computing matrix similarities or top selling items.
+    def run(self, sc, args):
+        """Main method for each algorithm where results are calculated and
+        exported to GCS.
         """
         pass
 
 
-    def get_formatted_date(self, day):
+    @staticmethod
+    def get_formatted_date(day):
         """This method is used mainly to transform the input of ``days``
         into a string of type ``YYYY-MM-DD``
+
         :type day: int
         :param day: how many days in time to come back from today to make
                     the string transformation.
+
         :rtype: str
         :returns: formated date of today - day in format %Y-%m-%d
         """
         return (datetime.datetime.now() -
             datetime.timedelta(days=day)).strftime('%Y-%m-%d')
+
+
+    def process_day_input(self, sc, source_uri, inter_uri, args, mode=None,
+            compression='gzip'):
+        """Reads data from source input, applies transformations and saves
+        results in specified URI.
+
+        :type sc: `pyspark.SparkContext`
+        :param sc: spark context to run spark jobs.
+
+        :type source_uri: str
+        :param source_uri: Source URI from where to read intpu data.
+
+        :type inter_uri: str
+        :param inter_uri: Intermediary URI from where to save processed data.
+
+        :type args: namedtuple
+        :param args: arguments to setup job.
+          :type args.w_browse: float
+          :param args.w_browse: score related to viewing product description.
+
+          :type args.w_basket: float
+          :param args.w_basket: score related to adding product to basket.
+
+          :type args.w_purchase: float
+          :param args.w_purchase: score related to buying a product.
+
+        :type mode: str
+        :param mode: indicates how data should be saved. If ``None`` then
+        	     throws error if file already exist. If ``overwrite`` then
+        	     deletes previous file and saves a new one.
+
+        :type compression: str
+        :param compression: which extension to save the file. Defaults to
+                            'gzip'.
+        """
+        (sc.textFile(source_uri)
+         .zipWithIndex()
+         .filter(lambda x: x[1] > 0)
+         .map(lambda x: x[0].split(','))
+         .map(lambda x: (x[0], (x[1], args.w_browse if x[2] == '1' else
+             args.w_basket if x[2] == '2' else args.w_purchase)))
+         .groupByKey().mapValues(list)
+         .flatMap(lambda x: self.aggregate_skus(x))
+         .toDF(schema=self.load_users_schema())
+         .write.json(inter_uri, compression=compression, mode=mode))
+
+
+    @staticmethod
+    def aggregate_skus(row):
+        """Aggregates skus from customers and their respective scores.
+
+        :type row: list
+        :param row: list having values [user, (sku, score)]
+
+        :rtype: list
+        :returns: `yield` on [user, (sku, sum(score))]
+        """
+        d = defaultdict(float)
+        for inner_row in row[1]:
+            d[inner_row[0]] += inner_row[1]
+        yield (row[0], list(d.items()))
+
+
+    def save_neighbor_matrix(self, neighbor_uri, data):
+        """Turns similarities into the final neighborhood matrix. The schema
+        for saving the matrix is like {sku0: [(sku1, similarity1)...]}
+
+        :type neighbor_uri: str
+        :param neighbor_uri: uri for where to save the matrix.
+        
+        :type data: RDD
+        :param data: RDD with data like [sku0, sku1, similarity]
+        """
+        def duplicate_keys(row):
+            """Builds the similarities between both the diagonals
+            of the similarity matrix. In the DIMSUM algorithm, we just compute
+            one of the diagonals. Here we will add the transpose of the matrix
+            so Marreco can see all similarities between all skus.
+        
+            :type row: list
+            :param row: data of type [(sku0, sku1), similarity]
+        
+            :rtype: list:
+            :returns: skus and their transposed similarities, such as
+                      [sku0, [sku1, s]], [sku1, [sku0, s]]
+            """
+            yield (row[0][0], [(row[0][1], row[1])])
+            yield (row[0][1], [(row[0][0], row[1])])
+        
+        (data.flatMap(lambda x: duplicate_keys(x))
+            .reduceByKey(operator.add)
+            .toDF(schema=self.load_neighbor_schema())
+            .write.json(neighbor_uri, compression='gzip', mode='overwrite'))
+
+
+    def load_neighbor_schema(self):
+        """Loads neighborhood schema for similarity matrix
+
+        :rtype: `pyspark.sql.types.StructField`
+        :returns: schema of type ["key", [("key", "value")]]
+        """
+        return stypes.StructType(fields=[
+                stypes.StructField("item_key", stypes.StringType()),
+                 stypes.StructField("similarity_items", stypes.ArrayType(
+                  stypes.StructType(fields=[
+                   stypes.StructField("key", stypes.StringType()),
+                    stypes.StructField("score", stypes.FloatType())])))])
+
