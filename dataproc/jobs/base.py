@@ -316,9 +316,9 @@ class JobsBase(object):
         :returns: schema of type ["key", [("key", "value")]]
         """
         return stypes.StructType(fields=[
-                stypes.StructField("item_key", stypes.StringType()),
+                stypes.StructField("item", stypes.StringType()),
                  stypes.StructField("similarity_items", stypes.ArrayType(
                   stypes.StructType(fields=[
-                   stypes.StructField("key", stypes.StringType()),
-                    stypes.StructField("score", stypes.FloatType())])))])
+                   stypes.StructField("item", stypes.StringType()),
+                    stypes.StructField("similarity", stypes.FloatType())])))])
 

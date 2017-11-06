@@ -24,7 +24,9 @@
 """Implements a naive approach to the neighborhood approach, i.e, computes
 all correlations that there is between all products a given customer
 interacted. This leads to quadratic complexity times whose processing time
-is prohibitive for large amounts of data"""
+is prohibitive for large amounts of data. The main difference between this
+module and `naive.py` is that here we'll work with the concept of Dataframes
+and see how much of an improvement (if any) we attain with this approach."""
 
 
 import operator
@@ -34,11 +36,13 @@ from base import JobsBase
 from pyspark.sql import SparkSession
 from pyspark.sql import types as stypes
 
-class NaiveJob(JobsBase):
+class DFNaiveJob(JobsBase):
     """Implements the naive approach of the neighborhood algorithm. 'Naive'
     because it computes all correlations between the products each customer
     interacted with, resulting in BigO(nL^2) where L is the maximum value of
-    products interacted among all customers.
+    products interacted among all customers. A difference here will be the
+    usage of 'dataframes' whose implementation is supposed to improve
+    Spark's performance.
     """
     def run(self, sc, args):
         """Main method to build the algorithm, its specifications and results.
@@ -83,10 +87,10 @@ class NaiveJob(JobsBase):
           :param args.w_purchase: score associated to buying the product.
         """
         self.transform_data(sc, args)
-        self.build_naive(sc, args)
+        self.build_df_naive(sc, args)
 
 
-    def build_naive(self, sc, args):
+    def build_df_naive(self, sc, args):
         """Builds naive approach of neighborhood algorithm whose BigO is 
         proportional to nL^2 where n is the number of users being evaluated
         and L is the highest observed value of interactions between products
