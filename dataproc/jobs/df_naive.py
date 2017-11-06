@@ -35,6 +35,8 @@ import math
 from base import JobsBase
 from pyspark.sql import SparkSession
 from pyspark.sql import types as stypes
+from pyspark.sql.context import SQLContext
+
 
 class DFNaiveJob(JobsBase):
     """Implements the naive approach of the neighborhood algorithm. 'Naive'
@@ -123,14 +125,17 @@ class DFNaiveJob(JobsBase):
         """
         print('AND NOW THE SHOW BEGINS ')
         spark = SparkSession(sc)
-        data = sc.emptyRDD()
+        data = SQLContext.createDataFrame(sc.emptyRDD(),
+            schema=self.load_users_schema())
         for day in range(args.days_init, args.days_end - 1, -1):
             print('PROCESSING DAY: ', day)
             formatted_day = self.get_formatted_date(day)
             inter_uri = args.inter_uri.format(formatted_day)
 
             data = data.union(spark.read.json(inter_uri,
-                schema=self.load_users_schema()).rdd)
+                schema=self.load_users_schema()))
+
+        data.createOrReplaceTempView('data')
 
         print('OK DATA IS DONE!')
         data = (data.reduceByKey(operator.add)
@@ -145,6 +150,56 @@ class DFNaiveJob(JobsBase):
         print('AND NOW WE SAVE')
         self.save_neighbor_matrix(args.neighbor_uri, data)
 
+
+    @property
+    def query_norms(self):
+        return """SELECT
+                    norms.sku0 sku0,
+                    SQRT(SUM(norms.norm)) norm
+                  FROM(
+                    SELECT
+                      EXPLODE(SQUARED(interactions)) norms
+                    FROM data
+                    WHERE SIZE(interactions) BETWEEN 2 AND 20
+                  )
+                  GROUP BY 1
+               """
+
+
+    @property
+    def query_similarities(self):
+        return """SELECT
+                    a.sku0 sku0,
+                    a.sku1 sku1,
+                    a.cor / (b.norm * c.norm) similarity
+                    FROM(
+                        SELECT
+                          inter.sku0 sku0,
+                          inter.sku1 sku1,
+                          SUM(inter.cor) cor
+                        FROM(
+                          SELECT
+                            EXPLODE(CORRELATIONS(interactions)) inter
+                          FROM test1
+                          WHERE SIZE(interactions) BETWEEN 2 AND 20
+                          )
+                        GROUP BY 1, 2
+                        ) a
+                  JOIN (
+                    SELECT 
+                      sku0,
+                      norm
+                    FROM test2
+                  ) b
+                  ON a.sku0 = b.sku0
+                  JOIN (
+                    SELECT 
+                      sku0,
+                      norm
+                    FROM test2
+                  ) c
+                  ON a.sku1 = c.sku0
+                  """
 
     @staticmethod
     def process_intersections(row, norms):
@@ -172,28 +227,6 @@ class DFNaiveJob(JobsBase):
                         norms.value[row[1][i][0]] *
                         norms.value[row[1][j][0]]))
 
-
-    def _broadcast_norms(self, sc, data):
-        """Scans through ``data`` computing the norm of each item.
-
-        :type sc: `pyspark.SparkContext`
-        :param sc: 
-
-        :type data: `pyspark.RDD`
-        :param data: RDD with data of type [user, [(item, score),
-                     (item, score)]
-
-        :rtype norms: dict
-        :returns norms: dict whose keys are items and values are the computed
-                  norm ||.||_2 given ``data``.
-        """
-        norms = {sku: norm for sku, norm in (data.flatMap(
-            lambda x: self._process_scores(x))
-            .reduceByKey(operator.add)
-            .map(lambda x: (x[0], math.sqrt(x[1])))
-            .collect())}
-        norms = sc.broadcast(norms)
-        return norms
 
 
     @staticmethod
