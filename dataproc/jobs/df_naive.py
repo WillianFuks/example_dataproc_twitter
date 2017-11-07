@@ -46,6 +46,60 @@ class DFNaiveJob(JobsBase):
     usage of 'dataframes' whose implementation is supposed to improve
     Spark's performance.
     """
+    def register_udfs(self, sess, sc):
+        """Register UDFs to be used in SQL queries.
+
+        :type sess: `pyspark.sql.SparkSession`
+        :param sess: Session used in Spark for SQL queries.
+
+        :type sc: `pyspark.SparkContext`
+        :param sc: Spark Context to run Spark jobs.
+        """ 
+        sess.udf.register("SQUARED", self.squared, returnType=(
+            stypes.ArrayType(stypes.StructType(
+            fields=[stypes.StructField('sku0', stypes.StringType()),
+            stypes.StructField('norm', stypes.FloatType())]))))
+
+        sess.udf.register('INTERSECTIONS',self.process_intersections,
+            returnType=stypes.ArrayType(stypes.StructType(fields=[
+            stypes.StructField('sku0', stypes.StringType()),
+            stypes.StructField('sku1', stypes.StringType()),
+            stypes.StructField('cor', stypes.FloatType())])))
+
+
+    @staticmethod
+    def process_intersections(row):
+        """Process all intersections between the items a given customer
+        interacted with.
+
+        :type row: list
+        :param row: customers interactions, like [('sku0', 0.5), ('sku1', 1.)]
+
+        :rtype r: list
+        :returns r: list with all intersections of items, such as
+                    [('sku0', 'sku1', 0.25), ('sku1', 'sku2', 0.5)] 
+        """
+        r = []
+        for i in range(len(row)):
+            for j in range(i + 1, len(row)):
+                r.append((row[i][0], row[j][0], row[i][1] * row[j][1]))
+        return r
+
+
+    @staticmethod
+    def squared(row):
+        """Returns all items with squared score for each customer.
+
+        :type row: list
+        :param row: customers interactions, like [('sku0', 0.5), ('sku1', 1.)]
+
+        :rtype: list
+        :returns: items and their squared interaction for each customer, such
+                  as [('sku0', 0.25), ('sku1', 1)]
+        """
+        return [(e[0], e[1] ** 2) for e in row]
+
+
     def run(self, sc, args):
         """Main method to build the algorithm, its specifications and results.
 
@@ -125,7 +179,7 @@ class DFNaiveJob(JobsBase):
         """
         print('AND NOW THE SHOW BEGINS ')
         spark = SparkSession(sc)
-        data = SQLContext.createDataFrame(sc.emptyRDD(),
+        data = spark.createDataFrame(sc.emptyRDD(),
             schema=self.load_users_schema())
         for day in range(args.days_init, args.days_end - 1, -1):
             print('PROCESSING DAY: ', day)
@@ -134,21 +188,18 @@ class DFNaiveJob(JobsBase):
 
             data = data.union(spark.read.json(inter_uri,
                 schema=self.load_users_schema()))
-
+        
+        self.register_udfs(spark, sc)
+        print('UDFS REGISTERED')
         data.createOrReplaceTempView('data')
-
-        print('OK DATA IS DONE!')
-        data = (data.reduceByKey(operator.add)
-            .flatMap(lambda x: self.aggregate_skus(x))
-            .filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 5))
-        print('AND NOW PREPARING FOR NORMS')
-        norms = self._broadcast_norms(sc, data)
-        print('NORMS IS COMPUTED!')
-        data = (data
-            .flatMap(lambda x: self.process_intersections(x, norms))
-            .reduceByKey(operator.add))
-        print('AND NOW WE SAVE')
-        self.save_neighbor_matrix(args.neighbor_uri, data)
+        print('DATA 3 ', data.head(3))
+        spark.sql(self.query_norms).createOrReplaceTempView('norms')
+        print('QUERY NORMS PERFORMED')
+        spark.sql(self.query_similarities).createOrReplaceTempView(
+            'similarities')
+        print('QUERY SIMILARITIES PERFORMED \n')
+        spark.sql(self.query_results).write.json(args.neighbor_uri,
+            compression='gzip', mode='overwrite')
 
 
     @property
@@ -179,8 +230,8 @@ class DFNaiveJob(JobsBase):
                           SUM(inter.cor) cor
                         FROM(
                           SELECT
-                            EXPLODE(CORRELATIONS(interactions)) inter
-                          FROM test1
+                            EXPLODE(INTERSECTIONS(interactions)) inter
+                          FROM data
                           WHERE SIZE(interactions) BETWEEN 2 AND 20
                           )
                         GROUP BY 1, 2
@@ -189,59 +240,42 @@ class DFNaiveJob(JobsBase):
                     SELECT 
                       sku0,
                       norm
-                    FROM test2
+                    FROM norms
                   ) b
                   ON a.sku0 = b.sku0
                   JOIN (
                     SELECT 
                       sku0,
                       norm
-                    FROM test2
+                    FROM norms
                   ) c
                   ON a.sku1 = c.sku0
-                  """
-
-    @staticmethod
-    def process_intersections(row, norms):
-        """Computes the intersections between items and scores. This results 
-        in the numerator of the cosine equation, given by:
-        sum{i=0 to N}(a_i * b_i) where ``N`` is the length of the vector.
-
-        :type row: `pyspark.RDD`
-        :param row: RDD with data like [user, (item, score), (item, score)]
-
-        :type norms: dict
-        :param norms: dict whose keys corresponds to items customers
-                      interacted and values their respective norm, like:
-                      {sku0: 0.11}
-
-        :rtype: tuple
-        :returns: all inter-connections between items interacted by each
-                  customer normalized by the norm of each item, like so:
-                  ((sku0, sku1), 0.3)
-        """
-        for i in range(len(row[1])):
-            for j in range(i + 1, len(row[1])):
-                yield ((row[1][i][0], row[1][j][0]),
-                    row[1][i][1] * row[1][j][1] / (
-                        norms.value[row[1][i][0]] *
-                        norms.value[row[1][j][0]]))
+               """
 
 
-
-    @staticmethod
-    def _process_scores(row):
-        """After all user -> score aggregation is done, this method loops
-        through each sku for a given user and yields its squared score so
-        that we can compute the norm ``||c||`` for each sku column.
-
-        :type row: list
-        :param row: list of type [(user, (sku, score))]
-
-        :rtype: tuple
-        :returns: tuple of type (sku, (score ** 2))
-         """
-        for inner_row in row[1]:
-            yield (inner_row[0], inner_row[1] ** 2)
-
-
+    @property
+    def query_results(self):
+        return """
+            SELECT
+               sku0 as item,
+               COLLECT_LIST(STRUCT(sku1 as item, similarity)) similarity_items
+            FROM(
+               SELECT
+                 *
+               FROM(
+                 SELECT
+                   sku0,
+                   sku1,
+                   similarity
+                 FROM similarities
+                 ) UNION ALL
+                 (
+                  SELECT
+                    sku1 as sku0,
+                    sku0 as sku1,
+                    similarity
+                  FROM similarities
+                )
+            )
+            GROUP BY 1
+            """
