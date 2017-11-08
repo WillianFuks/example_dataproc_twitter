@@ -29,6 +29,7 @@ is prohibitive for large amounts of data"""
 
 import operator
 import math
+import time
 
 from base import JobsBase
 from pyspark.sql import SparkSession
@@ -117,6 +118,7 @@ class NaiveJob(JobsBase):
           :param args.users_matrix_uri: URI for where to save matrix of users
                                         and their interacted skus.
         """
+        t0 = time.time()
         print('AND NOW THE SHOW BEGINS ')
         spark = SparkSession(sc)
         data = sc.emptyRDD()
@@ -131,7 +133,7 @@ class NaiveJob(JobsBase):
         print('OK DATA IS DONE!')
         data = (data.reduceByKey(operator.add)
             .flatMap(lambda x: self.aggregate_skus(x))
-            .filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 5))
+            .filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 100))
         print('AND NOW PREPARING FOR NORMS')
         norms = self._broadcast_norms(sc, data)
         print('NORMS IS COMPUTED!')
@@ -139,6 +141,7 @@ class NaiveJob(JobsBase):
             .flatMap(lambda x: self.process_intersections(x, norms))
             .reduceByKey(operator.add))
         print('AND NOW WE SAVE')
+        print('\n\nTIME TAKEN: ', time.time() - t0)
         self.save_neighbor_matrix(args.neighbor_uri, data)
 
 

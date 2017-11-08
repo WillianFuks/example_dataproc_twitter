@@ -29,6 +29,8 @@ is prohibitive for large amounts of data"""
 
 import operator
 import math
+import random
+import time
 
 from base import JobsBase
 from pyspark.sql import SparkSession
@@ -41,7 +43,9 @@ class DimSumJob(JobsBase):
     items, ``A`` is the smallest value of score present in all interactions and
     ``s`` is a value of threshold that exchanges compute-resources to precision
     in results. A threshold of 0.1 guarantees that values above this level
-    converges to real value with 20% relative error.
+    converges to real value with 20% relative error. As ``s`` approaches 0
+    results gets closer to real value (at the expense of also having
+    brute-force complexity).
     """
     def run(self, sc, args):
         """Main method to build the algorithm, its specifications and results.
@@ -86,14 +90,12 @@ class DimSumJob(JobsBase):
           :param args.w_purchase: score associated to buying the product.
         """
         self.transform_data(sc, args)
-        self.build_naive(sc, args)
+        self.build_dimsum(sc, args)
 
 
-    def build_naive(self, sc, args):
-        """Builds naive approach of neighborhood algorithm whose BigO is 
-        proportional to nL^2 where n is the number of users being evaluated
-        and L is the highest observed value of interactions between products
-        that a given customer had in training data.
+    def build_dimsum(self, sc, args):
+        """Builds dimsum approach for computing cosine similarities between
+        columns of a matrix.
         
         :type sc: `pyspark.SparkContext`
         :param sc: spark context to run spark jobs.
@@ -120,6 +122,7 @@ class DimSumJob(JobsBase):
           :param args.users_matrix_uri: URI for where to save matrix of users
                                         and their interacted skus.
         """
+        t0 = time.time()
         print('AND NOW THE SHOW BEGINS ')
         spark = SparkSession(sc)
         data = sc.emptyRDD()
@@ -133,66 +136,66 @@ class DimSumJob(JobsBase):
 
         print('OK DATA IS DONE!')
         data = (data.reduceByKey(operator.add)
-            .flatMap(lambda x: self.aggregate_skus(x))
-            .filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 5))
-        print('AND NOW PREPARING FOR NORMS')
-        norms = self._broadcast_norms(sc, data)
-        print('NORMS IS COMPUTED!')
-        data = (data
-            .flatMap(lambda x: self.process_intersections(x, norms))
-            .reduceByKey(operator.add))
+        	.flatMap(lambda x: self.aggregate_skus(x))
+        	.filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 100))
+        
+        pq_b = self._broadcast_pq(sc, data, args.threshold)
+        data = (data.flatMap(lambda x: self._run_DIMSUM(x[1], pq_b))
+                   .reduceByKey(operator.add))
+        print("\n\nTIME ELAPSED: ", time.time() - t0)
         print('AND NOW WE SAVE')
         self.save_neighbor_matrix(args.neighbor_uri, data)
 
 
-    @staticmethod
-    def process_intersections(row, norms):
-        """Computes the intersections between items and scores. This results 
-        in the numerator of the cosine equation, given by:
-        sum{i=0 to N}(a_i * b_i) where ``N`` is the length of the vector.
+    def _run_DIMSUM(self, row, pq_b):
+        """Implements DIMSUM as describe here:
+        
+        http://arxiv.org/abs/1304.1467
 
-        :type row: `pyspark.RDD`
-        :param row: RDD with data like [user, (item, score), (item, score)]
+        :type row: list
+        :param row: list with values (user, [(sku, score)...])
 
-        :type norms: dict
-        :param norms: dict whose keys corresponds to items customers
-                      interacted and values their respective norm, like:
-                      {sku0: 0.11}
-
-        :rtype: tuple
-        :returns: all inter-connections between items interacted by each
-                  customer normalized by the norm of each item, like so:
-                  ((sku0, sku1), 0.3)
+        :rtype: list
+        :returns: similarities between skus in the form [(sku0, sku1, similarity)]
         """
-        for i in range(len(row[1])):
-            for j in range(i + 1, len(row[1])):
-                yield ((row[1][i][0], row[1][j][0]),
-                    row[1][i][1] * row[1][j][1] / (
-                        norms.value[row[1][i][0]] *
-                        norms.value[row[1][j][0]]))
+        for i in range(len(row)):
+            if random.random() < pq_b.value[row[i][0]][0]:
+                for j in range(i + 1, len(row)):
+                    if random.random() < pq_b.value[row[j][0]][0]:
+                        value_i = row[i][1] / pq_b.value[row[i][0]][1]
+                        value_j = row[j][1] / pq_b.value[row[j][0]][1]
+                        key = ((row[i][0], row[j][0]) if row[i][0] < row[j][0]
+                               else (row[j][0], row[i][0]))
+                        yield (key, value_i * value_j)
 
 
-    def _broadcast_norms(self, sc, data):
-        """Scans through ``data`` computing the norm of each item.
+    def _broadcast_pq(self, sc, data, threshold):
+        """Builds and broadcast probability ``p`` value and factor ``q`` for
+        each sku.
 
-        :type sc: `pyspark.SparkContext`
-        :param sc: 
+        :type data: `spark.RDD`
+        :param data: RDD with values (user, (sku, score)).
 
-        :type data: `pyspark.RDD`
-        :param data: RDD with data of type [user, [(item, score),
-                     (item, score)]
+        :type threshold: float
+        :param threshold: all similarities above this value will be guaranteed
+                          to converge to real value with relative error ``e``.
 
-        :rtype norms: dict
-        :returns norms: dict whose keys are items and values are the computed
-                  norm ||.||_2 given ``data``.
+        :rtype: broadcasted dict
+        :returns: dict sku -> (p, q) where p is defined as ``gamma / ||c||``
+                  and ``q = min(gamma, ||c||)``.
         """
-        norms = {sku: norm for sku, norm in (data.flatMap(
-            lambda x: self._process_scores(x))
-            .reduceByKey(operator.add)
-            .map(lambda x: (x[0], math.sqrt(x[1])))
-            .collect())}
-        norms = sc.broadcast(norms)
-        return norms
+        norms = {sku: score for sku, score in
+                  (data.flatMap(lambda x: self._process_scores(x)) 
+                      .reduceByKey(operator.add) 
+                      .map(lambda x: (x[0], math.sqrt(x[1]))) 
+                      .collect())}
+
+        gamma = (math.sqrt(10 * math.log(len(norms)) / threshold) if threshold
+                  > 1e-6 else math.inf)
+
+        pq_b = sc.broadcast({sku: (gamma / value, min(gamma, value))
+                             for sku, value in norms.items()})        
+        return pq_b
 
 
     @staticmethod
@@ -209,5 +212,3 @@ class DimSumJob(JobsBase):
          """
         for inner_row in row[1]:
             yield (inner_row[0], inner_row[1] ** 2)
-
-
