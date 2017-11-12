@@ -76,4 +76,31 @@ def session_system_gae(session):
         'py.test',
         'tests/system/gae/')
 
+def session_system_dataproc(session):
+    """For testing dataproc jobs the environment must have a spark cluster
+    available.
+    """
+    session.interpreter = 'python2.7'
+    session.virtualenv_dirname = 'system-dataproc'
+
+    session.install('pytest', 'pytest-cov', 'mock')
+
+    try:
+        import pyspark
+    except:
+        raise RuntimeError("Please install pyspark and spark clusters to run "
+                           "tests")
+
+    # setups environment to be able to see Spark cluster
+    session.env = {'PYTHONPATH': (':./'
+                   ':/usr/local/spark/python'
+                   ':/usr/local/spark/python/lib/py4j-0.10.4-src.zip')}
+
+    session.run(
+        'py.test',
+        'tests/system/dataproc/',
+        '--cov=.',
+        '--cov-config=.coveragerc',
+        '--cov-report=html')
+
 

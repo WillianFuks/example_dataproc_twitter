@@ -3,3 +3,8 @@ omit = *.nox*
     beam_jobs/*
     gae/exporter/appengine_config.py
     nox.py
+
+
+[report]
+exclude_lines =
+    raise NotImplementedError
