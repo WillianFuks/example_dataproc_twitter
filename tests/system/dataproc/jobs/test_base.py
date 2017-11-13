@@ -25,13 +25,15 @@ import sys
 import os
 import unittest
 import datetime
+import json
 import mock
+import shutil
 from collections import namedtuple
 
 import pyspark
 import pyspark.sql.types as stypes
 import dataproc.jobs.base as base
-
+from pyspark.sql import Row
 
 class BaseTest(object):
     @staticmethod
@@ -118,9 +120,40 @@ class TestSystemBaseDataprocJob(unittest.TestCase, BaseTest):
     py_files = ['dataproc/jobs/base.py'] 
     _sc = pyspark.SparkContext(pyFiles=py_files)
     _session = pyspark.sql.SparkSession(_sc)
+    _base_path = "tests/system/data/dataproc/jobs/train/{}/"
+
+    @staticmethod
+    def get_paths(s):
+        _base_path = "tests/system/data/dataproc/jobs/train/{}/"
+        for i in range(1, s):
+            source_path = _base_path.format(i)
+            date_str = (datetime.datetime.now() 
+                        + datetime.timedelta(days=-i)).strftime("%Y-%m-%d")
+            dest_path = _base_path.format(date_str)  
+            yield [source_path, dest_path]
 
 
-    def test_transform_data(self):
+    @classmethod
+    def build_data(cls):
+        for source_path, dest_path in cls.get_paths(3):
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
+                shutil.copyfile(source_path + 'result.gz',
+                    dest_path + 'result.gz')
+
+
+    @classmethod
+    def setup_class(cls):
+        cls.build_data()
+        
+
+    @classmethod
+    def teardown_class(cls):
+        for _, dest_path in cls.get_paths(3):
+            shutil.rmtree(dest_path) 
+
+
+    def test_transform_data_force_no(self):
         klass = self.get_target_klass()()
         source_uri = "tests/system/data/dataproc/jobs/train/{}/"
         inter_uri = "tests/system/data/dataproc/jobs/inter/{}/"
@@ -128,8 +161,71 @@ class TestSystemBaseDataprocJob(unittest.TestCase, BaseTest):
             '--source_uri={}'.format(source_uri),
             '--inter_uri={}'.format(inter_uri), '--force=no', 
             '--neighbor_uri=neighbor_uri'])
-        date_mock = mock.Mock(side_effect=['2017-10-10', '2017-10-11'])
-        klass.get_formatted_date = date_mock
         klass.transform_data(self._sc, args)
-        self.assertTrue(False)
+        expected = {'2': {'0': [{'item': 'sku0', 'score': 6.0}],
+                          '3': [{'item': 'sku0', 'score': 0.5}],
+                          '2': [{'item': 'sku0', 'score': 0.5}, 
+                                {'item': 'sku1', 'score': 0.5}]},
+                    '1': {'1': [{'item': 'sku0', 'score': 0.5},
+                                {'item': 'sku1', 'score': 8.5}],
+                          '0': [{'item': 'sku0', 'score': 1.0},
+                                {'item': 'sku1', 'score': 2.0}]}}
+        for i in range(1, 3):
+            date_str = klass.get_formatted_date(i)
+            result = [json.loads(e) for e in 
+                self._sc.textFile(inter_uri.format(date_str)).collect()]
+            for row in result:
+                self.assertEqual(expected[str(i)][row['user']],
+                    sorted(row['interactions'], key=lambda x: x['item']))
+
+
+    def test_transform_data_force_yes(self):
+        klass = self.get_target_klass()()
+        source_uri = "tests/system/data/dataproc/jobs/train/{}/"
+        inter_uri = "tests/system/data/dataproc/jobs/inter/{}/"
+        args = klass.process_base_sysargs(['--days_init=2', '--days_end=1',
+            '--source_uri={}'.format(source_uri),
+            '--inter_uri={}'.format(inter_uri), '--force=no', 
+            '--neighbor_uri=neighbor_uri'])        
+        klass.transform_data(self._sc, args)
+        args = klass.process_base_sysargs(['--days_init=2', '--days_end=1',
+            '--source_uri={}'.format(source_uri),
+            '--inter_uri={}'.format(inter_uri), '--force=yes', 
+            '--neighbor_uri=neighbor_uri'])
+        expected = {'2': {'0': [{'item': 'sku0', 'score': 6.0}],
+                          '3': [{'item': 'sku0', 'score': 0.5}],
+                          '2': [{'item': 'sku0', 'score': 0.5}, 
+                                {'item': 'sku1', 'score': 0.5}]},
+                    '1': {'1': [{'item': 'sku0', 'score': 0.5},
+                                {'item': 'sku1', 'score': 8.5}],
+                          '0': [{'item': 'sku0', 'score': 1.0},
+                                {'item': 'sku1', 'score': 2.0}]}}
+        for i in range(1, 3):
+            date_str = klass.get_formatted_date(i)
+            result = [json.loads(e) for e in 
+                self._sc.textFile(inter_uri.format(date_str)).collect()]
+            for row in result:
+                self.assertEqual(expected[str(i)][row['user']],
+                    sorted(row['interactions'], key=lambda x: x['item']))
+
+
+    def test_save_neighbor_matrix(self):
+        klass = self.get_target_klass()()
+        data = self._sc.parallelize([(('sku0', 'sku1'), 1.),
+                                   (('sku0', 'sku2'), 0.5),
+                                   (('sku1', 'sku2'), 0.5)])    
+        neighbor_uri = 'tests/system/data/dataproc/jobs/results/'
+        klass.save_neighbor_matrix(neighbor_uri, data)
+        result = [json.loads(e) for e in 
+                    self._sc.textFile(neighbor_uri).collect()]
+        expected = {'sku0': [{"item": "sku1", "similarity": 1.0},
+                          {"item": "sku2", "similarity": 0.5}],
+                    'sku2': [{"item": "sku0", "similarity": 0.5},
+                             {"item": "sku1", "similarity": 0.5}],
+                    'sku1': [{"item": "sku0", "similarity": 1.0},
+                             {"item": "sku2", "similarity": 0.5}]} 
+        for row in result:
+            self.assertEqual(expected[row['item']], row['similarity_items'])
+
+
 

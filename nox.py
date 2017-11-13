@@ -23,6 +23,8 @@
 
 import os
 
+import nox
+
 
 def session_unit_gae(session):
     """This session tests only the tests associated to google AppEngine
@@ -76,12 +78,13 @@ def session_system_gae(session):
         'py.test',
         'tests/system/gae/')
 
-def session_system_dataproc(session):
+@nox.parametrize('py', ['2.7', '3.6'])
+def session_system_dataproc(session, py):
     """For testing dataproc jobs the environment must have a spark cluster
     available.
     """
-    session.interpreter = 'python2.7'
-    session.virtualenv_dirname = 'system-dataproc'
+    session.interpreter = 'python{}'.format(py)
+    session.virtualenv_dirname = 'system-dataproc-{}'.format(py)
 
     session.install('pytest', 'pytest-cov', 'mock')
 

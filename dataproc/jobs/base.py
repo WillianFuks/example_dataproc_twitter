@@ -158,9 +158,7 @@ class JobsBase(object):
         """
         spark = SparkSession(sc)
         for day in range(args.days_init, args.days_end - 1, -1):
-            print('PROCESSING DAY ', day)
             formatted_day = self.get_formatted_date(day)
-            print('FORMATTED DATE: ', formatted_day)
             source_uri = args.source_uri.format(formatted_day)
             inter_uri = args.inter_uri.format(formatted_day)
             try:
@@ -170,9 +168,7 @@ class JobsBase(object):
                 if args.force == 'yes' or not inter_data:
                     self.process_day_input(sc, source_uri, inter_uri, 
                         args, mode='overwrite')
-                print('IVE WORKED THROUGH TRY')
             except (Py4JJavaError, AnalysisException):
-                print('EXCEPT WAS INITIATED')
                 self.process_day_input(sc, source_uri, inter_uri, args)
 
 
@@ -196,7 +192,7 @@ class JobsBase(object):
         """Main method for each algorithm where results are calculated and
         exported to GCS.
         """
-        pass
+        raise NotImplementedError
 
 
     @staticmethod
@@ -285,7 +281,7 @@ class JobsBase(object):
         :param neighbor_uri: uri for where to save the matrix.
         
         :type data: RDD
-        :param data: RDD with data like [sku0, sku1, similarity]
+        :param data: RDD with data like [((sku0, sku1), similarity)]
         """
         def duplicate_keys(row):
             """Builds the similarities between both the diagonals
@@ -321,4 +317,3 @@ class JobsBase(object):
                   stypes.StructType(fields=[
                    stypes.StructField("item", stypes.StringType()),
                     stypes.StructField("similarity", stypes.FloatType())])))])
-
