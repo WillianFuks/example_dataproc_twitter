@@ -86,7 +86,7 @@ def session_system_dataproc(session, py):
     session.interpreter = 'python{}'.format(py)
     session.virtualenv_dirname = 'system-dataproc-{}'.format(py)
 
-    session.install('pytest', 'pytest-cov', 'mock')
+    session.install('pytest', 'pytest-cov', 'mock', 'numpy')
 
     try:
         import pyspark
@@ -100,10 +100,11 @@ def session_system_dataproc(session, py):
                    ':/usr/local/spark/python/lib/py4j-0.10.4-src.zip')}
 
     session.run(
-        'py.test',
-        'tests/system/dataproc/',
-        '--cov=.',
-        '--cov-config=.coveragerc',
-        '--cov-report=html')
+    'py.test',
+    'tests/system/dataproc/',
+    '-k test_dimsum',
+    '--cov=.',
+    '--cov-config=.coveragerc',
+    '--cov-report=html')
 
 

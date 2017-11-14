@@ -32,7 +32,7 @@ import math
 import random
 import time
 
-from base import JobsBase
+from dataproc.jobs.base import JobsBase
 from pyspark.sql import SparkSession
 from pyspark.sql import types as stypes
 
@@ -70,6 +70,10 @@ class DimSumJob(JobsBase):
 
           :type args.inter_uri: str
           :param args.inter_uri: URI where to save intermediary results.
+
+          :type args.threshold: float
+          :param args.threshold: threshold on dimsum algorithm for trade-off
+                                 between quality and cost.
 
           :type args.force: str
           :param args.force: if ``yes`` then overwrites intermediary results
