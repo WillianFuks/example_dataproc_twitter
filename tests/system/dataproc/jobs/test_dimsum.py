@@ -23,6 +23,7 @@
 
 import sys
 import os
+import math
 import unittest
 import datetime
 import json
@@ -59,17 +60,19 @@ class TestSystemBaseDataprocJob(BaseTest):
         cls.delete_data(cls._base_path) 
 
 
-    def test_transform_data_force_no(self, spark_context):
+    def test_run_no_threshold(self, spark_context):
         klass = self.get_target_klass()()
         source_uri = "tests/system/data/dataproc/jobs/train/dimsum/{}/"
         inter_uri = "tests/system/data/dataproc/jobs/train/dimsum/inter/{}/"
         neighbor_uri = 'tests/system/data/dataproc/jobs/train/dimsum/results/'
         args = klass.process_base_sysargs(['--days_init=2', '--days_end=1',
-            '--source_uri={}'.format(source_uri), '--threshold=0', 
-            '--inter_uri={}'.format(inter_uri), '--force=no', 
+            '--source_uri={}'.format(source_uri),
+            '--threshold=0', 
+            '--inter_uri={}'.format(inter_uri),
+            '--force=no', 
             '--neighbor_uri={}'.format(neighbor_uri)])
         klass.run(spark_context, args)
-        a = np.array([[0, 6, 0, 0],
+        a = np.array([[0, 6, 0, 0.5],
                       [0.5, 0.5, 1, 0.5],
                       [7, 0, 2.5, 6.5],
                       [7, 0, 6, 6]])
@@ -79,27 +82,63 @@ class TestSystemBaseDataprocJob(BaseTest):
         idi = np.linalg.inv(di)
         expected = np.dot(idi, np.dot(r1, idi))
         print("THIS IS EXPECTED", expected)
-        result = spark_context.textFile(neighbor_uri).collect()
+        result = [json.loads(e) for e in 
+                    spark_context.textFile(neighbor_uri).collect()]
         print("AND THIS IS RESULT", result)
-        assert(result == expected)
+        for row in result:
+            for sim in row['similarity_items']:
+                i = int(row['item'][-1])
+                j = int(sim['item'][-1])
+                np.testing.assert_almost_equal(expected[i][j],
+                    sim['similarity'])  
+                assert(sim['similarity'] > 0.01)
+        shutil.rmtree(neighbor_uri)
+        assert(os.path.isdir(neighbor_uri) == False)
 
 
-#    def test_save_neighbor_matrix(self, spark_context):
-#        klass = self.get_target_klass()()
-#        data = spark_context.parallelize([(('sku0', 'sku1'), 1.),
-#                                   (('sku0', 'sku2'), 0.5),
-#                                   (('sku1', 'sku2'), 0.5)])    
-#        neighbor_uri = 'tests/system/data/dataproc/jobs/results/'
-#        klass.save_neighbor_matrix(neighbor_uri, data)
-#        result = [json.loads(e) for e in 
-#                    spark_context.textFile(neighbor_uri).collect()]
-#        expected = {'sku0': [{"item": "sku1", "similarity": 1.0},
-#                          {"item": "sku2", "similarity": 0.5}],
-#                    'sku2': [{"item": "sku0", "similarity": 0.5},
-#                             {"item": "sku1", "similarity": 0.5}],
-#                    'sku1': [{"item": "sku0", "similarity": 1.0},
-#                             {"item": "sku2", "similarity": 0.5}]} 
-#        for row in result:
-#            assert(expected[row['item']] == row['similarity_items'])
-#        shutil.rmtree(neighbor_uri)
-#        assert(os.path.isdir(neighbor_uri) == False)
+    def test_run_with_threshold(self, spark_context):
+        klass = self.get_target_klass()()
+        source_uri = "tests/system/data/dataproc/jobs/train/dimsum/{}/"
+        inter_uri = "tests/system/data/dataproc/jobs/train/dimsum/inter/{}/"
+        neighbor_uri = 'tests/system/data/dataproc/jobs/train/dimsum/results/'
+        a = np.array([[0, 6, 0, 0.5],
+                      [0.5, 0.5, 1, 0.5],
+                      [7, 0, 2.5, 6.5],
+                      [7, 0, 6, 6]])
+        # threshold = 10 * log(n) * eps ^ 2 / n since gamma = n / eps^2
+        eps = 0.2
+        threshold = 10 * math.log(a.shape[1]) * eps ** 2 / a.shape[1]
+        args = klass.process_base_sysargs(['--days_init=2', '--days_end=1',
+            '--source_uri={}'.format(source_uri),
+            '--threshold={}'.format(threshold), 
+            '--inter_uri={}'.format(inter_uri),
+            '--force=no', 
+            '--neighbor_uri={}'.format(neighbor_uri)])
+        klass.run(spark_context, args)
+        r1 = np.dot(a.T, a)
+        d = np.sqrt(r1.diagonal())
+        di = np.diag(d)
+        idi = np.linalg.inv(di)
+        expected = np.dot(idi, np.dot(r1, idi))
+        print("THIS IS EXPECTED", expected)
+        result = [json.loads(e) for e in 
+                    spark_context.textFile(neighbor_uri).collect()]
+        print("AND THIS IS RESULT", result)
+        correct, total = (0, 0)
+        # The following is based on the theorem from
+        # https://arxiv.org/pdf/1304.1467.pdf
+        # stating:
+        # ||DBD - A.TA||/||A.TA|| <= eps with P = 50%
+        # where ||.|| is the Frobenius norm of degree 2.
+        for row in result:
+            for sim in row['similarity_items']:
+                i = int(row['item'][-1])
+                j = int(sim['item'][-1])
+                if ((np.abs(expected[i][j] - sim['similarity']) /
+                     expected[i][j]) < eps):
+                    correct += 1
+                total += 1
+                assert(sim['similarity'] > 0.01)
+        assert(correct / total >= 0.5)
+        shutil.rmtree(neighbor_uri)
+        assert(os.path.isdir(neighbor_uri) == False)

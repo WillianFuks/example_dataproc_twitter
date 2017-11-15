@@ -252,7 +252,7 @@ class JobsBase(object):
          .map(lambda x: (x[0], (x[1], args.w_browse if x[2] == '1' else
              args.w_basket if x[2] == '2' else args.w_purchase)))
          .groupByKey().mapValues(list)
-         .flatMap(lambda x: self.aggregate_skus(x))
+             .flatMap(lambda x: self.aggregate_skus(x))
          .toDF(schema=self.load_users_schema())
          .write.json(inter_uri, compression=compression, mode=mode))
 

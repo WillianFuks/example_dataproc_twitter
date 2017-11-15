@@ -102,7 +102,6 @@ def session_system_dataproc(session, py):
     session.run(
     'py.test',
     'tests/system/dataproc/',
-    '-k test_dimsum',
     '--cov=.',
     '--cov-config=.coveragerc',
     '--cov-report=html')

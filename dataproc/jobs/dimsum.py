@@ -1,4 +1,4 @@
-#MIT License
+    #MIT License
 #
 #Copyright (c) 2017 Willian Fuks
 #
@@ -134,18 +134,24 @@ class DimSumJob(JobsBase):
             print('PROCESSING DAY: ', day)
             formatted_day = self.get_formatted_date(day)
             inter_uri = args.inter_uri.format(formatted_day)
+            print("INTER URI", inter_uri)
 
             data = data.union(spark.read.json(inter_uri,
                 schema=self.load_users_schema()).rdd)
+            print('STEPS OF DATA', data.collect())
+
 
         print('OK DATA IS DONE!')
         data = (data.reduceByKey(operator.add)
         	.flatMap(lambda x: self.aggregate_skus(x))
         	.filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 100))
-        
+    
+        print("DATA IN DIMSUM: ", data.collect())
+    
         pq_b = self._broadcast_pq(sc, data, args.threshold)
         data = (data.flatMap(lambda x: self._run_DIMSUM(x[1], pq_b))
-                   .reduceByKey(operator.add))
+            .reduceByKey(operator.add)
+            .filter(lambda x: x[1] > 0.01))
         print("\n\nTIME ELAPSED: ", time.time() - t0)
         print('AND NOW WE SAVE')
         self.save_neighbor_matrix(args.neighbor_uri, data)
@@ -195,7 +201,7 @@ class DimSumJob(JobsBase):
                       .collect())}
 
         gamma = (math.sqrt(10 * math.log(len(norms)) / threshold) if threshold
-                  > 1e-6 else math.inf)
+                  > 1e-6 else float("inf"))
 
         pq_b = sc.broadcast({sku: (gamma / value, min(gamma, value))
                              for sku, value in norms.items()})        
