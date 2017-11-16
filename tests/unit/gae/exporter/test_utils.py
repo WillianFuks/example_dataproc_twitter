@@ -20,6 +20,7 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
+
 import json
 import unittest
 import mock
@@ -28,10 +29,10 @@ import datetime
 import gae.exporter.utils as utils
 
 class TestUtils(unittest.TestCase):
-
     @staticmethod
     def load_mock_config():
-        data = open('tests/unit/data/gae/exporter/test_config.json').read()
+        data = (open('tests/unit/data/gae/exporter/test_config.json')
+                .read().replace("config = ", ""))
         return json.loads(data)
 
 
