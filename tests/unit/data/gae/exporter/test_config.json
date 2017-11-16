@@ -1,4 +1,4 @@
-{"jobs":{
+config = {"jobs":{
        "query_job": {
            "source": {
                "table_id": "source_table",
