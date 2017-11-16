@@ -166,11 +166,11 @@ def format_date(input_date, format="%Y-%m-%d"):
     return datetime.datetime.strptime(input_date, "%Y%m%d").strftime(
         format)
 
-def process_url_date(args):
+def process_url_date(date):
     """Gets the variable ``date`` from URL.
 
-    :type args: dict
-    :param args: dict containing variables sent in URL request.
+    :type date: str 
+    :param date: date to process. 
 
     :raises: `ValueError` if ``date`` is not in format "%Y%m%d" and is
              not null.
@@ -178,7 +178,6 @@ def process_url_date(args):
     :rtype: str
     :returns: `None` is `date` is empty or a string representation of date
     """
-    date = args.get('date')
     # if ``date`` is defined then it was sent as parameter in the URL request
     if date:
         try:

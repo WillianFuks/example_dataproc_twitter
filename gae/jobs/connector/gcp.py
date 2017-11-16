@@ -46,23 +46,27 @@ class GCPService(object):
 
         :returns: Resource object to interact with GCP 
         """
-        if name not in self.available_services:
-            raise ValueError(("'{name}' is not a valid service."
-                             "Available services are: {services}").format(
-                             name=name,
-                             services=",".join(list(
-                                 self.available_services))))
-
-        # if no ``credentials`` is sent then assume we are running this code
-        # in AppEngine environment
-        if not credentials:
-            credentials = app_engine.Credentials()
-            #credentials = (service_account.Credentials.\
-            #    from_service_account_file('key.json')
-        
-        self.con = disco.build(name,
-                               self.available_services[name],
-                               credentials=credentials)
+        print 'PROCESSING GCPSERVICE'
+        try:
+            if name not in self.available_services:
+                raise ValueError(("'{name}' is not a valid service."
+                                 "Available services are: {services}").format(
+                                 name=name,
+                                 services=",".join(list(
+                                     self.available_services))))
+            print "PROCESSED UNTIL RETURNING GCP OBJ"
+            # if no ``credentials`` is sent then assume we are running this code
+            # in AppEngine environment
+            #if not credentials:
+            #    credentials = app_engine.Credentials()
+            #    #credentials = (service_account.Credentials.\
+            #    #    from_service_account_file('key.json')
+            #
+            #self.con = disco.build(name,
+            #                       self.available_services[name],
+            #                       credentials=credentials)
+        except Exception as err:
+            print "VALUE OF ERR: ", str(err)
             
     @property
     def available_services(self):
