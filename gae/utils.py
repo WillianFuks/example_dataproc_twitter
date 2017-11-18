@@ -110,10 +110,9 @@ def load_query(date=None, **kwargs):
     """
     source = kwargs['jobs']['query_job']['source']
     date_str = get_yesterday_date().strftime("%Y%m%d") if not date else date
-    result = open(source['query_path']).read().format(project_id=source['project_id'],
-                                            dataset_id=source['dataset_id'],
-                                            table_id=source['table_id'],
-                                            date=date_str).strip()
+    result = open(source['query_path']).read().format(
+        project_id=source['project_id'], dataset_id=source['dataset_id'],
+        table_id=source['table_id'], date=date_str).strip()
     return result
 
 def load_extract_job_body(date=None, **kwargs):

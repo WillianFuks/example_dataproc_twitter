@@ -33,7 +33,7 @@ def session_unit_gae(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'unit-gae'
 
-    session.install('-r', 'gae/exporter/requirements.txt')
+    session.install('-r', 'tests/unit/gae/test_requirements.txt')
     session.install('pytest', 'pytest-cov', 'mock')
 
     if not os.path.isdir('/google-cloud-sdk/platform/google_appengine/'):
@@ -44,7 +44,7 @@ def session_unit_gae(session):
     # we set ``gae/exporter`` in PYTHONPATH as well since this becomes
     # the root directory when App Engine starts the wsgi server
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
-                                  'google_appengine/:./:.gae/exporter/')}
+                                  'google_appengine/:./:./gae/')}
 
     session.run(
         'py.test',

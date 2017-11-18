@@ -25,11 +25,10 @@ import unittest
 import mock
 import googleapiclient
 
-from gae.exporter.connector.gcp import GCPService
+from gae.connector.gcp import GCPService
 
 
 class TestGCPFactory(unittest.TestCase):
-
     @staticmethod
     def _make_credentials():
         import google.auth.credentials
@@ -43,7 +42,7 @@ class TestGCPFactory(unittest.TestCase):
             service = GCPService('test')
     
 
-    @mock.patch('gae.exporter.connector.gcp.app_engine')        
+    @mock.patch('gae.connector.gcp.app_engine')        
     def test_service_builds_successfully_no_credentials(self, app_mock):
         service = GCPService('bigquery')
         app_mock.Credentials.assert_called_once()
@@ -71,11 +70,12 @@ class TestGCPFactory(unittest.TestCase):
         body = {'project_id': 'project123'}
 
         job = service.execute_job(project_id, body)
-        resource_mock.insert.assert_called_once_with(**{'projectId': project_id, 'body': body})
+        resource_mock.insert.assert_called_once_with(
+            **{'projectId': project_id, 'body': body})
         execute_mock.execute.assert_called_once_with(**{'num_retries': 3})
 
 
-    @mock.patch('gae.exporter.connector.gcp.time')
+    @mock.patch('gae.connector.gcp.time')
     def test_poll_job(self, time_mock):
         cre = self._make_credentials()
         service = GCPService('bigquery', cre)
@@ -92,7 +92,7 @@ class TestGCPFactory(unittest.TestCase):
         request_mock.execute.assert_called_once_with(**{'num_retries': 3})
 
 
-    @mock.patch('gae.exporter.connector.gcp.time')
+    @mock.patch('gae.connector.gcp.time')
     def test_poll_job_raises_error(self, time_mock):
         cre = self._make_credentials()
         service = GCPService('bigquery', cre)

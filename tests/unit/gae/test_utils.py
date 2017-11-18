@@ -26,12 +26,12 @@ import unittest
 import mock
 import datetime
 
-import gae.exporter.utils as utils
+import gae.utils as utils
 
 class TestUtils(unittest.TestCase):
     @staticmethod
     def load_mock_config():
-        data = (open('tests/unit/data/gae/exporter/test_config.json')
+        data = (open('tests/unit/data/gae/test_config.json')
                 .read().replace("config = ", ""))
         return json.loads(data)
 
@@ -42,7 +42,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(expected.date(), result.date())
 
 
-    @mock.patch('gae.exporter.utils.uuid')
+    @mock.patch('gae.utils.uuid')
     def test_load_query_job_body(self, uuid_mock):
         query_str = ("SELECT 1 FROM `project123.source_dataset.source_table` "
                      "WHERE date={}")
@@ -90,7 +90,7 @@ class TestUtils(unittest.TestCase):
 
 
 
-    @mock.patch('gae.exporter.utils.uuid')
+    @mock.patch('gae.utils.uuid')
     def test_load_extract_job_body(self, uuid_mock):
         uuid_mock.uuid4.return_value = 'name'
         dest = 'gs://bucket/output/{}/result.gz'
@@ -131,13 +131,13 @@ class TestUtils(unittest.TestCase):
 
     def test_process_url_date(self):
         expected = None
-        result = utils.process_url_date({})
+        result = utils.process_url_date(None)
         self.assertEqual(expected, result)
 
         expected = "20171010"
-        result = utils.process_url_date({"date": "20171010"})
+        result = utils.process_url_date("20171010")
         self.assertEqual(expected, result)
 
         with self.assertRaises(ValueError):
-            utils.process_url_date({"date": "2017-10-10"})
+            utils.process_url_date("2017-10-10")
 

@@ -24,5 +24,7 @@
 from google.appengine.ext import vendor
 
 import os
-
-vendor.add('lib')
+root_path = os.path.dirname(os.path.abspath(__file__))
+lib_path = os.path.join(root_path, 'lib')
+if os.path.isdir(lib_path):
+    vendor.add(lib_path)

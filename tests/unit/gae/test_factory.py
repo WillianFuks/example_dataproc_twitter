@@ -23,33 +23,25 @@
 
 import sys
 import os
-import webtest
-import googleapiclient
+import mock
 import unittest
-from google.appengine.ext import testbed
-from gae.exporter.main import app, process_url_date
-
-from google.appengine.api import taskqueue
-
-class TestExporterService(unittest.TestCase):
-    test_app = webtest.TestApp(app)
-
-    def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_taskqueue_stub('./gae/exporter/')
-        self.taskqueue_stub = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
 
 
-    def tearDown(self):
-        self.testbed.deactivate()
+class TestJobsFactory(unittest.TestCase):
+    @staticmethod
+    def _get_target_klass(): 
+        from factory import JobsFactory
 
 
-    def test_added_to_queue(self):
-        response = self.test_app.get("/export_customers?date=20171010")
-        self.assertEqual(response.status_int, 200)
+        return JobsFactory
 
-        tasks = self.taskqueue_stub.get_filtered_tasks()
-        self.assertEqual(1, len(tasks)) 
-        self.assertEqual(tasks[0].url, '/queue_export')
 
+    @mock.patch('gae.main.jobs_factory')
+    def test_factor_job(self, factory_mock):
+        klass = self._get_target_klass()()
+        with self.assertRaises(TypeError):
+            klass.factor_job('invalid_name') 
+
+        exporter = klass.factor_job('export_customers_from_bq') 
+        self.assertEqual(exporter.__name__, 'SchedulerJob')
+        

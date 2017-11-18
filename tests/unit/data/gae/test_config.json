@@ -4,7 +4,7 @@ config = {"jobs":{
                "table_id": "source_table",
                "dataset_id": "source_dataset",
                "project_id": "project123",
-               "query_path": "tests/unit/data/gae/exporter/test_query.sql"
+               "query_path": "tests/unit/data/gae/test_query.sql"
             },
             "destination": {
                "table_id": "dest_table",

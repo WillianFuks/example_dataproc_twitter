@@ -27,8 +27,8 @@ from google.appengine.api import taskqueue
 import utils
 
 
-class ExporterJob(object):
-    """Job that runs queued tasks."""
+class SchedulerJob(object):
+    """Job queue tasks."""
     def __init__(self):
         self.task = None
 
@@ -50,9 +50,14 @@ class ExporterJob(object):
                                 ``target`` that is sent as param in the POST
                                 request. 
         """
-        url = args.pop('url') 
-        target = args.pop('target')
-        task = taskqueue.add(url=url, target=target, params=args)
+        url = args.get('url')
+        target = args.get('target')
+
+        if not url or not target:
+            raise ValueError("A value for URL and TARGET must be available")
+
+        task = taskqueue.add(url=url, target=target, params=dict((i, v) for
+            i, v in args.items() if i not in ['url', 'target']))
         self.task = task
  
 

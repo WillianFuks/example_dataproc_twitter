@@ -30,27 +30,29 @@ import os
 
 
 class TestWorkerBase(object):                                                   
-    _source_config = 'tests/unit/data/gae/exporter/test_config.json'            
-    _dest_config = 'gae/exporter/config.py'                                     
+    _source_config = 'tests/unit/data/gae/test_config.json'            
+    _dest_config = 'gae/config.py'                                     
     _remove_config_flag = False                                                 
+
                                                                                 
     @classmethod                                                                
     def load_worker_setup(cls):                                                 
         try:                                                                    
-            import gae.exporter.worker as worker                                
+            import gae.worker as worker                                
         except ImportError:                                                     
             shutil.copyfile(cls._source_config, cls._dest_config)               
             cls._remove_config_flag = True                                      
-        import gae.exporter.worker as worker                                    
-        from gae.exporter import utils                                          
+
+        import gae.worker as worker                                    
+        from gae import utils                                          
         cls.utils = utils                                                       
         cls.worker = worker                                                     
                                                                                 
+
     @classmethod                                                                
     def clean_config(cls):                                                      
         if cls._remove_config_flag:                                             
             os.remove(cls._dest_config)
-
 
                                                                                 
 class TestWorkerService(unittest.TestCase, TestWorkerBase):                     
@@ -71,13 +73,13 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
             "config = ", ""))  
 
 
-    @mock.patch('gae.exporter.worker.request')                                  
-    @mock.patch('gae.exporter.utils.uuid')                                      
-    @mock.patch('gae.exporter.worker.bq_service')                               
+    @mock.patch('gae.worker.request')                                  
+    @mock.patch('gae.utils.uuid')                                      
+    @mock.patch('gae.worker.bq_service')                               
     def test_export(self, con_mock, uuid_mock, request_mock):                   
         uuid_mock.uuid4.return_value = 'name'                                   
         request_mock.form.get.return_value = '20171010'                         
-        # this means that the config file is a original one so far              
+        # this means that the config file is a pre-defined one              
         # so we need to replace it in this test                                 
         if not self._remove_config_flag:                                        
             self.worker.config = self.load_mock_config()                        
@@ -89,7 +91,7 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
                                                                                 
         job_mock = mock.Mock()                                                  
         con_mock.execute_job.return_value = 'job'                               
-        response = self._test_app.post("/queue_export?date=20171010")           
+        response = self._test_app.post("/export_customers?date=20171010")           
                                                                                 
         con_mock.execute_job.assert_any_call(*['project123',                    
             query_job_body])                                                    

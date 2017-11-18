@@ -25,7 +25,7 @@
 
 
 from flask import Flask, request
-from jobs.factory import JobsFactory
+from factory import JobsFactory
 
 app = Flask(__name__)
 jobs_factory = JobsFactory()
