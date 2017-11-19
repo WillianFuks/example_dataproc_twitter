@@ -112,13 +112,13 @@ class TestUtils(unittest.TestCase):
                 }
             }
         }
- 
         result = utils.load_extract_job_body(None, **self.load_mock_config())
         expected['configuration']['extract']['destinationUris'] = [
             dest.format(utils.get_yesterday_date().strftime("%Y-%m-%d"))]
         self.assertEqual(expected, result)
 
-        result = utils.load_extract_job_body("20171010", **self.load_mock_config())
+        result = utils.load_extract_job_body("20171010",
+            **self.load_mock_config())
         expected['configuration']['extract']['destinationUris'] = [
             dest.format("2017-10-10")]
 

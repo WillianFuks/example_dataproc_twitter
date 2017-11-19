@@ -61,24 +61,6 @@ class SchedulerJob(object):
         self.task = task
  
 
-    def _process_date(date):
-        """Process the date variable from URL. Processing it is a bit more
-        demanding as there's some rules applied such as one for a defined
-        date and one for when date is None.
-
-        :type date: str
-        :param date: date to process the export in BigQuery.
-
-        :rtype date: str
-        :returns: date processed in format %Y-%m-%d.
-        """
-        if not date:
-            date = utils.get_yesterday_date().strftime('%Y-%m-%d') 
-        else:
-            date = utils.process_url_date(date)
-        return date
-
-
     def __str__(self):
         if not self.task:
             return 'No task has been enqueued so far'

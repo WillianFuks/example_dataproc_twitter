@@ -34,11 +34,11 @@ class JobsFactory(object):
         :type job_name: str
         :param job_name: name of job to build.
         """
-        if job_name not in self.available_jobs:
-            raise TypeError("Please choose a valid job name")
-        if job_name == 'export_customers_from_bq':
+        if job_name in self.available_jobs:
             return self.scheduler 
-
+        else:
+            raise TypeError("Please choose a valid job name")
+ 
 
     @property
     def available_jobs(self):
@@ -47,4 +47,4 @@ class JobsFactory(object):
         :rtype: set
         :returns: set with available jobs that can be used in GAE.    
         """
-        return set(['export_customers_from_bq'])
+        return set(['export_customers_from_bq', 'run_dimsum'])

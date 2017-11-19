@@ -39,7 +39,10 @@ def run_job(job_name):
     :type job_name: str
     :param job_name: specifies which job to run.
     """
-    job = jobs_factory.factor_job(job_name)()
-    job.run(request.args)
+    try:
+        job = jobs_factory.factor_job(job_name)()
+        job.run(request.args)
+    except Exception as err:
+        print str(err)
     return str(job)
 

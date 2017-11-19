@@ -68,7 +68,7 @@ def load_query_job_body(date, **kwargs):
     :returns: dict containing body to setup job execution.
     """
     query = load_query(date, **kwargs)
-    dest = kwargs['jobs']['query_job']['destination']
+    dest = kwargs['jobs']['export_customers']['query_job']['destination']
     return {'jobReference': {
                 'projectId': dest['project_id'],
                 'jobId': str(uuid.uuid4())
@@ -108,7 +108,7 @@ def load_query(date=None, **kwargs):
       :type source.table_id: str
       :param source.table_id: table_id to format query.
     """
-    source = kwargs['jobs']['query_job']['source']
+    source = kwargs['jobs']['export_customers']['query_job']['source']
     date_str = get_yesterday_date().strftime("%Y%m%d") if not date else date
     result = open(source['query_path']).read().format(
         project_id=source['project_id'], dataset_id=source['dataset_id'],
@@ -126,7 +126,7 @@ def load_extract_job_body(date=None, **kwargs):
     :param kwargs:
       :type project_id: str
     """      
-    value = kwargs['jobs']['extract_job']
+    value = kwargs['jobs']['export_customers']['extract_job']
     date = (get_yesterday_date().strftime("%Y-%m-%d") if not date else
        format_date(date))
     output = value['output'].format(date=date)

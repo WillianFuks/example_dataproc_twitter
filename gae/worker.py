@@ -48,9 +48,14 @@ def export():
         extract_job_body)
     return "finished"
 
-
 @app.route("/dataproc_dimsum", methods=['POST'])
 def dataproc_dimsum():
-    name = request.form.get('name')
-    gcp_service.dataproc.create_cluster( 
+    print "AM I HERE?"
+    try:
+        job = gcp_service.dataproc.build_cluster(
+            **config['jobs']['run_dimsum']['create_cluster'])
+    except Exception as err:
+        print str(err)
+    print job
+    return "ok"
         

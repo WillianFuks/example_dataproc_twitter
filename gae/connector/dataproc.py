@@ -56,8 +56,8 @@ class DataprocService(object):
           :type zone: str
           :param zone: zone where cluster will be located.
 
-          :type name: str
-          :param name: name of cluster to create.
+          :type cluster_name: str
+          :param cluster_name: name of cluster to create.
 
           :type master_type: str
           :param master_type: instance computing type such as ``n1-standard-1``
@@ -68,28 +68,32 @@ class DataprocService(object):
           :type instances_type: str
           :param instances_type: instance computing type for workers.
         """
-        if self.get_cluster(name, project_id, region) == {}:
-            raise TypeError("Cluster {} already exists".format(name))
-
+        project_id = kwargs['project_id']
+        cluster_name = kwargs['cluster_name']
+        zone = kwargs['zone']
+        region = zone[:-2]
+        if self.get_cluster(cluster_name, project_id, region) != {}:
+            raise TypeError("Cluster {} already exists".format(cluster_name))
         cluster_data = {
-            'projectId': project,
+            'projectId': project_id,
             'clusterName': cluster_name,
             'config': {
                 'gceClusterConfig': {
-                    'zoneUri': zone_uri
+                    'zoneUri': ZONE_URI.format(project_id, zone)
                 },
                 'masterConfig': {
                     'numInstances': 1,
-                    'machineTypeUri': 'n1-standard-1'
+                    'machineTypeUri': kwargs['master_type'] 
                 },
                 'workerConfig': {
-                    'numInstances': 2,
-                    'machineTypeUri': 'n1-standard-1'
+                    'numInstances': kwargs['worker_num_instances'],
+                    'machineTypeUri': kwargs['worker_type']
                 }
             }
         }  
-        result = self.con.project().regions().clusters().create(
-            projectId=project_id, region=region,body=cluster_data).execute(num_retries=3)
+        result = self.con.projects().regions().clusters().create(
+            projectId=project_id, region=region, body=cluster_data).execute(
+                num_retries=3)
         return result
 
 
@@ -124,20 +128,9 @@ class DataprocService(object):
         :rtype: dict
         :returns: dict with information of cluster. Empty if finds nothing.
         """
-        result = self.con.project().regions().clusters().list(
+        result = self.con.projects().regions().clusters().list(
             projectId=project_id, region=region).execute(num_retries=3)
-        return [e for e in result.get('clusters', [{}]) if
-            e.get('clusterName', [{}]) == name][0]
+        return ([e for e in result.get('clusters', [{}]) if
+            e.get('clusterName', [{}]) == name] or [{}])[0]
         
-
-
-
-
-
-
-
-
-
-
-
 

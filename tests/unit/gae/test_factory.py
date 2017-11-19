@@ -45,3 +45,6 @@ class TestJobsFactory(unittest.TestCase):
         exporter = klass.factor_job('export_customers_from_bq') 
         self.assertEqual(exporter.__name__, 'SchedulerJob')
         
+        exporter = klass.factor_job('run_dimsum') 
+        self.assertEqual(exporter.__name__, 'SchedulerJob')
+        

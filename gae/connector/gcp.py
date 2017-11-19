@@ -21,9 +21,7 @@
 #SOFTWARE.
 
 
-"""Factory module to build google's apis services such as BigQuery service or
-Cloud Storage.
-"""
+"""Main class with connectors to different services available in GCP."""
 
 
 import time
@@ -31,7 +29,6 @@ import time
 import google.auth.credentials
 import googleapiclient.discovery as disco
 from google.auth import app_engine
-from google.oauth2 import service_account
 from bigquery import BigQueryService
 from dataproc import DataprocService
 
@@ -55,10 +52,11 @@ class GCPService(BigQueryService, DataprocService):
                             "google.auth.credentials") 
         # if no ``credentials`` is sent then assume we are running this
         # code in AppEngine environment
-        self._credentials = (app_engine.Credentials() if not credentials else
-            credentials)
-        #self._credentials = (service_account.Credentials.\
-        #    from_service_account_file('key.json'))            
+        #self._credentials = (app_engine.Credentials() if not credentials else
+        #    credentials)
+        from google.oauth2 import service_account
+        self._credentials = (service_account.Credentials.\
+            from_service_account_file('./key.json'))            
 
 
     @property
@@ -72,3 +70,4 @@ class GCPService(BigQueryService, DataprocService):
     def dataproc(self):
         if not self._dataproc:
             self._dataproc = DataprocService(self._credentials)
+        return self._dataproc
