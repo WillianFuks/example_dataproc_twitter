@@ -22,11 +22,13 @@
 
 
 import json                                                                     
-import webtest                                                                  
+import datetime
 import unittest                                                                 
 import mock                                                                     
 import shutil                                                                   
 import os     
+
+import webtest                                                                  
 
 
 class TestWorkerBase(object):                                                   
@@ -75,27 +77,60 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
 
     @mock.patch('gae.worker.request')                                  
     @mock.patch('gae.utils.uuid')                                      
-    @mock.patch('gae.worker.bq_service')                               
-    def test_export(self, con_mock, uuid_mock, request_mock):                   
-        uuid_mock.uuid4.return_value = 'name'                                   
+    @mock.patch('gae.worker.gcp_service')
+    def test_export_pre_defined_date(self, service_mock, uuid_mock,
+                                        request_mock):
+        uuid_mock.uuid4.return_value = 'name'                              
         request_mock.form.get.return_value = '20171010'                         
         # this means that the config file is a pre-defined one              
         # so we need to replace it in this test                                 
         if not self._remove_config_flag:                                        
             self.worker.config = self.load_mock_config()                        
+
         query_job_body = self.utils.load_query_job_body("20171010",             
             **self.worker.config)                                               
-                                                                                
         extract_job_body = self.utils.load_extract_job_body("20171010",         
             **self.worker.config)                                               
                                                                                 
         job_mock = mock.Mock()                                                  
-        con_mock.execute_job.return_value = 'job'                               
+        service_mock.bigquery.execute_job.return_value = 'job' 
         response = self._test_app.post("/export_customers?date=20171010")           
                                                                                 
-        con_mock.execute_job.assert_any_call(*['project123',                    
-            query_job_body])                                                    
-        con_mock.execute_job.assert_any_call(*['project123',                    
+        service_mock.bigquery.execute_job.assert_any_call(*['project123',
+            query_job_body]) 
+        service_mock.bigquery.poll_job.assert_called_once_with('job')
+        service_mock.bigquery.execute_job.assert_any_call(*['project123',
             extract_job_body])                                                  
         self.assertEqual(response.status_int, 200)                              
-                                                     
+
+
+
+    @mock.patch('gae.worker.request')                                  
+    @mock.patch('gae.utils.uuid')                                      
+    @mock.patch('gae.worker.gcp_service')
+    def test_export_no_date(self, service_mock, uuid_mock, request_mock):
+        uuid_mock.uuid4.return_value = 'name'                              
+        request_mock.form.get.return_value = 'None'                         
+        # this means that the config file is a pre-defined one              
+        # so we need to replace it in this test                                 
+        if not self._remove_config_flag:                                        
+            self.worker.config = self.load_mock_config()                        
+        today_str = (datetime.datetime.now() -
+             datetime.timedelta(days=1)).strftime("%Y%m%d")
+
+
+        query_job_body = self.utils.load_query_job_body(today_str,           
+            **self.worker.config)               
+        extract_job_body = self.utils.load_extract_job_body(today_str, 
+            **self.worker.config)           
+                                                                                
+        job_mock = mock.Mock()                                                  
+        service_mock.bigquery.execute_job.return_value = 'job' 
+        response = self._test_app.post("/export_customers")   
+
+                                                                                    
+        service_mock.bigquery.execute_job.assert_any_call(*['project123',
+            query_job_body])        
+        service_mock.bigquery.execute_job.assert_any_call(*['project123',
+            extract_job_body])                                                  
+        self.assertEqual(response.status_int, 200)                      

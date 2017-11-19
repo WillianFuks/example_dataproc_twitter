@@ -25,79 +25,50 @@
 Cloud Storage.
 """
 
+
 import time
 
-from google.auth import app_engine
+import google.auth.credentials
 import googleapiclient.discovery as disco
+from google.auth import app_engine
 from google.oauth2 import service_account
+from bigquery import BigQueryService
+from dataproc import DataprocService
 
-class GCPService(object):
 
-    def __init__(self, name, credentials=None):
+class GCPService(BigQueryService, DataprocService):
+    _credentials = None
+    _bigquery = None
+    _dataproc = None
+    def __init__(self, credentials=None):
         """Builds a connector to interact with Google Cloud tools.
-
-        :type name: str
-        :param name: name of which service to build, such as 'bigquery'
-                     or 'storage'. ``name`` must be available in 
-                     `self.available_services()`
 
         :type credentials: `google.auth.credentials.Credentials`
         :param credentials: certificates to connect to GCP.
 
-        :returns: Resource object to interact with GCP 
+        :raises: TypeError if credentials is not of type
+                 google.auth.credentials
         """
-        if name not in self.available_services:
-            raise ValueError(("'{name}' is not a valid service."
-                             "Available services are: {services}").format(
-                             name=name,
-                             services=",".join(list(
-                                 self.available_services))))
+        if (credentials is not None and not isinstance(credentials,
+            google.auth.credentials.Credentials)):
+            raise TypeError("credentials must be of type "
+                            "google.auth.credentials") 
         # if no ``credentials`` is sent then assume we are running this
         # code in AppEngine environment
-        if not credentials:
-            credentials = app_engine.Credentials()
-            #credentials = (service_account.Credentials.\
-            #    from_service_account_file('key.json')
-        
-        self.con = disco.build(name, self.available_services[name],
-            credentials=credentials)
-            
+        self._credentials = (app_engine.Credentials() if not credentials else
+            credentials)
+        #self._credentials = (service_account.Credentials.\
+        #    from_service_account_file('key.json'))            
+
+
     @property
-    def available_services(self):
-        """Available services that can be used in this project"""
-        return {'bigquery': 'v2',
-                 'storage': 'v1'} 
-
-    
-    def execute_job(self, project_id, body):
-        """Executes a job to run in GCP.
-
-        :type project_id: str
-        :param projectId: name of project Id to run the job.
-
-        :type body: dict
-        :param body: dict that specifies the job configuration
-        """
-        return self.con.jobs().insert(projectId=project_id,
-                                       body=body).execute(num_retries=3)
-
- 
-    def poll_job(self, job):
-        """Waits for a job to complete.
-
-        :type job: `googleapi.discovery.Resource`
-        :param job: any job that has been initiated by the connector.
-        """
-        request = self.con.jobs().get(
-            projectId=job['jobReference']['projectId'],
-            jobId=job['jobReference']['jobId'])
+    def bigquery(self):
+        if not self._bigquery:
+            self._bigquery = BigQueryService(self._credentials) 
+        return self._bigquery
 
 
-        while True:
-            result = request.execute(num_retries=3)
-            if result['status']['state'] == 'DONE':
-                if 'errorResult' in result['status']:
-                    raise RuntimeError(result['status']['errorResult'])
-                return
-            time.sleep(1)
- 
+    @property
+    def dataproc(self):
+        if not self._dataproc:
+            self._dataproc = DataprocService(self._credentials)

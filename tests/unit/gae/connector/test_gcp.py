@@ -23,89 +23,49 @@
 
 import unittest
 import mock
-import googleapiclient
 
-from gae.connector.gcp import GCPService
+import googleapiclient
+import google.auth.credentials
 
 
 class TestGCPFactory(unittest.TestCase):
     @staticmethod
     def _make_credentials():
-        import google.auth.credentials
-
-        
         return mock.Mock(spec=google.auth.credentials.Credentials)
 
 
-    def test_service_build_raises_name_error(self):
-        with self.assertRaises(ValueError):
-            service = GCPService('test')
+    @staticmethod
+    def _get_target_klass():
+        from gae.connector.gcp import GCPService
+
+
+        return GCPService
+
+
+    @mock.patch('gae.connector.gcp.app_engine')
+    def test_cto_no_credentials(self, app_mock):
+        app_mock.Credentials.return_value = self._make_credentials() 
+        klass = self._get_target_klass()() 
+        self.assertTrue(isinstance(klass._credentials,
+             google.auth.credentials.Credentials))
+            
+
+    def test_cto_with_credentials(self):
+        klass = self._get_target_klass()(self._make_credentials()) 
+        self.assertTrue(isinstance(klass._credentials,
+             google.auth.credentials.Credentials))
+
+
+    def test_cto_with_invalid_credentials(self):
+        with self.assertRaises(TypeError):
+            klass = self._get_target_klass()('invalid credential') 
+
     
-
-    @mock.patch('gae.connector.gcp.app_engine')        
-    def test_service_builds_successfully_no_credentials(self, app_mock):
-        service = GCPService('bigquery')
-        app_mock.Credentials.assert_called_once()
-
-
-    def test_service_builds_successfully_w_credentials(self):
-        cre = self._make_credentials()
-        service = GCPService('bigquery', cre)
-        self.assertTrue(isinstance(service.con,
-                         googleapiclient.discovery.Resource))
-
-
-    def test_execute_job(self):
-        cre = self._make_credentials()
-        service = GCPService('bigquery', cre)
-        job_mock = mock.Mock()
-        resource_mock = mock.Mock()
-        execute_mock = mock.Mock()
-        service.con.jobs = job_mock
-
-        job_mock.return_value = resource_mock
-        resource_mock.insert.return_value = execute_mock
-
-        project_id = 'project123'
-        body = {'project_id': 'project123'}
-
-        job = service.execute_job(project_id, body)
-        resource_mock.insert.assert_called_once_with(
-            **{'projectId': project_id, 'body': body})
-        execute_mock.execute.assert_called_once_with(**{'num_retries': 3})
-
-
-    @mock.patch('gae.connector.gcp.time')
-    def test_poll_job(self, time_mock):
-        cre = self._make_credentials()
-        service = GCPService('bigquery', cre)
-        job_mock = mock.Mock()
-        resource_mock = mock.Mock()
-        request_mock = mock.Mock()
-        job_mock.jobs.return_value = resource_mock
-        resource_mock.get.return_value = request_mock
-        request_mock.execute.return_value = {"status": {"state": "DONE"}}
-        service.con = job_mock
-
-        job = {"jobReference": {"projectId": "project123", "jobId": "1"}}
-        service.poll_job(job)
-        request_mock.execute.assert_called_once_with(**{'num_retries': 3})
-
-
-    @mock.patch('gae.connector.gcp.time')
-    def test_poll_job_raises_error(self, time_mock):
-        cre = self._make_credentials()
-        service = GCPService('bigquery', cre)
-        job_mock = mock.Mock()
-        resource_mock = mock.Mock()
-        request_mock = mock.Mock()
-        job_mock.jobs.return_value = resource_mock
-        resource_mock.get.return_value = request_mock
-        request_mock.execute.return_value = {"status": {"state": "DONE",
-                                                        "errorResult": True}}
-        service.con = job_mock
-
-        job = {"jobReference": {"projectId": "project123", "jobId": "1"}}
-        with self.assertRaises(RuntimeError):
-            service.poll_job(job)
- 
+    @mock.patch('gae.connector.gcp.BigQueryService')
+    def test_bigquery_property(self, bq_mock):
+        bq_mock.return_value = 'con'
+        klass = self._get_target_klass()(self._make_credentials()) 
+        self.assertTrue(klass._bigquery is None)
+        con = klass.bigquery
+        self.assertEqual(con, 'con')
+        self.assertTrue(klass.bigquery is not None)

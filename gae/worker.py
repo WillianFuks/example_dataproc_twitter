@@ -28,25 +28,29 @@ from connector.gcp import GCPService
 
 
 app = Flask(__name__)
-bq_service = GCPService('bigquery') 
+gcp_service = GCPService() 
 
 @app.route("/export_customers", methods=['POST'])
 def export():
-    try:
-        date = (None if request.form.get('date') == 'None' else
-            utils.process_url_date(request.form.get('date')))
-   
-        query_job_body = utils.load_query_job_body(date,
-            **config)
+    date = (None if request.form.get('date') == 'None' else
+        utils.process_url_date(request.form.get('date')))
 
-        job = bq_service.execute_job(config['general']['project_id'],
-            query_job_body)
-        bq_service.poll_job(job)
+    query_job_body = utils.load_query_job_body(date,
+        **config)
 
-        extract_job_body = utils.load_extract_job_body(date, **config)
-        bq_service.execute_job(config['general']['project_id'],
-            extract_job_body)
-    except Exception as err:
-        print str(err)
+    job = gcp_service.bigquery.execute_job(config['general']['project_id'],
+        query_job_body)
 
+    gcp_service.bigquery.poll_job(job)
+
+    extract_job_body = utils.load_extract_job_body(date, **config)
+    gcp_service.bigquery.execute_job(config['general']['project_id'],
+        extract_job_body)
     return "finished"
+
+
+@app.route("/dataproc_dimsum", methods=['POST'])
+def dataproc_dimsum():
+    name = request.form.get('name')
+    gcp_service.dataproc.create_cluster( 
+        
