@@ -29,14 +29,14 @@ import time
 import google.auth.credentials
 import googleapiclient.discovery as disco
 from google.auth import app_engine
-from bigquery import BigQueryService
-from dataproc import DataprocService
+from . import BigQueryService, DataprocService, StorageService
 
 
-class GCPService(BigQueryService, DataprocService):
+class GCPService(BigQueryService, DataprocService, StorageService):
     _credentials = None
     _bigquery = None
     _dataproc = None
+    _storage = None
     def __init__(self, credentials=None):
         """Builds a connector to interact with Google Cloud tools.
 
@@ -71,3 +71,10 @@ class GCPService(BigQueryService, DataprocService):
         if not self._dataproc:
             self._dataproc = DataprocService(self._credentials)
         return self._dataproc
+
+
+    @property
+    def storage(self):
+        if not self._storage:
+            self._storage = StorageService(self._credentials)
+        return self._storage

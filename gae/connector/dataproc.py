@@ -25,6 +25,7 @@
 
 
 import time
+from operator import itemgetter
 
 import googleapiclient.discovery as disco
 
@@ -94,23 +95,34 @@ class DataprocService(object):
         result = self.con.projects().regions().clusters().create(
             projectId=project_id, region=region, body=cluster_data).execute(
                 num_retries=3)
+        self.wait_cluster_operation(result)
         return result
 
 
-    def wait_cluster_creation(self, job, name, project_id, region):
-        """Waits for the asynchronous creation of the cluster by constantly
-        asking the backend system how is the current job state.
+    def wait_cluster_operation(self, job):
+        """Waits for the asynchronous operation (either creation or deletion)
+        of the cluster by constantly asking the backend system how is the
+        current job state.
 
         :type job: dict
-        :param job: response object sent by the backend.
+        :param job: response object sent by the backend, it follows the
+                    following schema:
+
+        (https://cloud.google.com/dataproc/docs/reference/rest/Shared.Types/
+            ListOperationsResponse#Operation)
         """
+        mapping = itemgetter(1, 3)
         while True:
-            cluster_status = self.get_cluster(name, project_id, region)
-            if cluster_status.get('status').get('state') == 'ERROR':
+            print "IM WAITING CLUSTER OPERATION"
+            (project_id, region) = mapping(job['name'].split('/'))
+            cluster_name = job['metadata']["clusterName"]
+            cluster_status = self.get_cluster(cluster_name, project_id, region)
+            if cluster_status['status']['state'] == 'ERROR':
                 raise Exception(result['status']['details'])
-            if cluster.get('status').get('state') == 'RUNNING':
+            if cluster_status['status']['state'] == 'RUNNING':
                 break
-            time.sleep(5)
+            # as cluster operations takes longer then we wait more as well
+            time.sleep(30)
 
 
     def get_cluster(self, name, project_id, region):
@@ -132,5 +144,50 @@ class DataprocService(object):
             projectId=project_id, region=region).execute(num_retries=3)
         return ([e for e in result.get('clusters', [{}]) if
             e.get('clusterName', [{}]) == name] or [{}])[0]
-        
+ 
 
+    def delete_cluster(self, **kwargs):
+        """Deletes a specific dataproc cluster.
+
+        :kwargs:
+          :type project_id: str
+          :param project_id: project id where cluster is located.
+
+          :type region: str
+          :param region: region where cluster is located.
+
+          :type cluster_name: str
+          :param cluster_name: name of cluster to delete
+
+          :rtype: dict
+          :returns: dict with resource information for deletion method.
+        """
+        project_id = kwargs['project_id']
+        region = kwargs['zone'][:-2]
+        cluster_name = kwargs['cluster_name']  
+        result = self.con.projects().regions().clusters().delete(
+            projectId=project_id, region=region,
+             clusterName=cluster_name).execute(num_retries=3)
+
+        self.wait_cluster_operation(result)
+        return result
+
+
+    def submit_pyspark_job(self, **kwargs):
+        """Submits a pyspark job to the dataproc cluster.
+
+        :kwargs:
+          :
+        """
+        job_details = {
+            'projectId': project,
+            'job': {
+                'placement': {
+                    'clusterName': cluster_name
+                },
+                'pysparkJob': {
+                    'mainPythonFileUri': 'gs://{}/{}'.format(bucket_name, filename),
+                    'pythonFileUris': 
+                }
+            }
+        } 
