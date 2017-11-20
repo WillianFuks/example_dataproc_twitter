@@ -91,7 +91,7 @@ class DataprocService(object):
                     'machineTypeUri': kwargs['create_cluster']['worker_type']
                 }
             }
-        }  
+        }
         result = self.con.projects().regions().clusters().create(
             projectId=project_id, region=region, body=cluster_data).execute(
                 num_retries=3)
@@ -123,6 +123,35 @@ class DataprocService(object):
                 break
             # as cluster operations takes longer then we wait more as well
             time.sleep(30)
+
+
+    def wait_for_job(self, job, region):
+        """Waits for a submitted pyspark job to complete.
+
+        :type job: dict
+        :param job: result of a submitted job call to the backend. Contains
+                    general information such as job state and eventual
+                    error messages.
+
+        :type region: str
+        :param region: where cluster is located. As this information is not
+                       available in the job response, we have to send it as
+                       input.
+        """
+        project_id = job['reference']['projectId']
+        job_id = job['reference']['jobId']
+        while True:
+            print "IM PROCESSING JOB YET"
+            result = self.con.projects().regions().jobs().get(
+                projectId=project_id, region=region, jobId=job_id).execute(
+                    num_retries=3)
+            if result['status']['state'] == 'ERROR':
+                raise Exception(result['status']['details'])
+            elif result['status']['state'] == 'DONE':
+                return result
+            # jobs are supposed to take quite a while so we wait longer
+            # accordingly.
+            time.sleep(60)
 
 
     def get_cluster(self, name, project_id, region):
@@ -183,22 +212,30 @@ class DataprocService(object):
 
         :kwargs:
           :type project_id:
+          :param project_id: project where cluster is located.
 
+          :type cluster_name: str
+          :param cluster_name: name of cluster to submit the job.
 
-          :type cluster_name:
-
-
-          :type zone:
-
+          :type zone: str
+          :param zone: which zone is located the cluster.
 
           :type pyspark_job: dict
-            :type bucket:
+            :type bucket: str
+            :param bucket: bucket where py files are located to feed the job.
 
-            :type py_files:
+            :type py_files: list
+            :param py_files: list of python file names to load from GCS and
+                             feed into the job.
 
-            :type main_file:
+            :type main_file: str
+            :param main_files: main file to run in dataproc cluster.
 
-            :type default_args:
+            :type default_args: list
+            :param default_args: args to send for the job, such as where to
+                                 load input data from, intermediary data,
+                                 results and so on. This comes from the
+                                 config.py file.
         """
         project_id = kwargs['project_id']
         cluster_name = kwargs['cluster_name']
@@ -217,11 +254,12 @@ class DataprocService(object):
                     'mainPythonFileUri': base_uri.format(bucket, main_file),
                     'pythonFileUris': map(lambda x: base_uri.format(bucket, x),
                         [e for e in kwargs['pyspark_job']['py_files'] if e !=
-                    kwargs['pyspark_job']['main_file']]), 
-                    'args': args  
+                    kwargs['pyspark_job']['main_file']]),
+                    'args': args
                 }
             }
-        } 
+        }
         job = self.con.projects().regions().jobs().submit(projectId=project_id,
             region=region, body=body).execute(num_retries=3)
-        return job
+        result = self.wait_for_job(job, region)
+        return result

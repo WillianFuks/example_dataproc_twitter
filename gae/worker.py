@@ -54,10 +54,10 @@ def dataproc_dimsum():
         extended_args = request.form.get('extended_args').split(',')
         print 'extended args', extended_args
         setup = config['jobs']['run_dimsum']
-        job = gcp_service.dataproc.build_cluster(**setup)
+        #job = gcp_service.dataproc.build_cluster(**setup)
         #print 'VALUE OF JOB', job
-        #gcp_service.storage.upload_from_filenames(
-        #    **config['jobs']['run_dimsum']['pyspark_job'])
+        gcp_service.storage.upload_from_filenames(
+            **config['jobs']['run_dimsum']['pyspark_job'])
         #result = gcp_service.dataproc.delete_cluster(**setup)
         #print 'VALUE OF RESULT DELETION: ', result
         job = gcp_service.dataproc.submit_pyspark_job(extended_args,
@@ -66,7 +66,3 @@ def dataproc_dimsum():
     except Exception as err:
         print str(err)
     return "ok"
-
-
-
-

@@ -126,34 +126,22 @@ class DimSumJob(JobsBase):
           :param args.users_matrix_uri: URI for where to save matrix of users
                                         and their interacted skus.
         """
-        t0 = time.time()
-        print('AND NOW THE SHOW BEGINS ')
         spark = SparkSession(sc)
         data = sc.emptyRDD()
         for day in range(args.days_init, args.days_end - 1, -1):
-            print('PROCESSING DAY: ', day)
             formatted_day = self.get_formatted_date(day)
             inter_uri = args.inter_uri.format(formatted_day)
-            print("INTER URI", inter_uri)
-
             data = data.union(spark.read.json(inter_uri,
                 schema=self.load_users_schema()).rdd)
-            print('STEPS OF DATA', data.collect())
 
-
-        print('OK DATA IS DONE!')
         data = (data.reduceByKey(operator.add)
         	.flatMap(lambda x: self.aggregate_skus(x))
-        	.filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 100))
-    
-        print("DATA IN DIMSUM: ", data.collect())
-    
+        	.filter(lambda x: len(x[1]) > 1 and len(x[1]) <= 20))
+
         pq_b = self._broadcast_pq(sc, data, args.threshold)
         data = (data.flatMap(lambda x: self._run_DIMSUM(x[1], pq_b))
             .reduceByKey(operator.add)
             .filter(lambda x: x[1] > 0.01))
-        print("\n\nTIME ELAPSED: ", time.time() - t0)
-        print('AND NOW WE SAVE')
         self.save_neighbor_matrix(args.neighbor_uri, data)
 
 
