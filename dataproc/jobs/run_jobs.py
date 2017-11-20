@@ -47,12 +47,10 @@ def get_alg(args):
 
 def main():
     alg = get_alg(sys.argv[1:]).algorithm
-    print('VALUE OF ALG ', alg)
     if alg:
         job = JobsFactory._factor_alg(alg)()
         args = job.process_base_sysargs(
             [e for e in sys.argv[1:] if 'algorithm' not in e])
-        print('VALUE OF ARGS!!!! ', args)
         with pyspark.SparkContext() as sc:
             job.run(sc, args)
         #    job.transform_data(sc, args)

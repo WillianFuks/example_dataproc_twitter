@@ -32,7 +32,7 @@ import math
 import random
 import time
 
-from dataproc.jobs.base import JobsBase
+from base import JobsBase
 from pyspark.sql import SparkSession
 from pyspark.sql import types as stypes
 

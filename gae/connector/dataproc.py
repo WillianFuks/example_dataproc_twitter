@@ -84,11 +84,11 @@ class DataprocService(object):
                 },
                 'masterConfig': {
                     'numInstances': 1,
-                    'machineTypeUri': kwargs['master_type'] 
+                    'machineTypeUri': kwargs['create_cluster']['master_type'] 
                 },
                 'workerConfig': {
-                    'numInstances': kwargs['worker_num_instances'],
-                    'machineTypeUri': kwargs['worker_type']
+                    'numInstances': kwargs['create_cluster']['worker_num_instances'],
+                    'machineTypeUri': kwargs['create_cluster']['worker_type']
                 }
             }
         }  
@@ -173,21 +173,55 @@ class DataprocService(object):
         return result
 
 
-    def submit_pyspark_job(self, **kwargs):
+    def submit_pyspark_job(self, extended_args, **kwargs):
         """Submits a pyspark job to the dataproc cluster.
 
+        :type extended_args: list
+        :param extended_args: arguments that can be passed through the URL
+                              request, such as ``days_init``, ``days_end``,
+                              ``threshold``, ``force`` 
+
         :kwargs:
-          :
+          :type project_id:
+
+
+          :type cluster_name:
+
+
+          :type zone:
+
+
+          :type pyspark_job: dict
+            :type bucket:
+
+            :type py_files:
+
+            :type main_file:
+
+            :type default_args:
         """
-        job_details = {
-            'projectId': project,
+        project_id = kwargs['project_id']
+        cluster_name = kwargs['cluster_name']
+        bucket = kwargs['pyspark_job']['bucket'] 
+        main_file = kwargs['pyspark_job']['main_file']
+        args = extended_args + kwargs['pyspark_job']['default_args']
+        region = kwargs['zone'][:-2]
+        base_uri = 'gs://{}/{}'
+        body = {
+            'projectId': project_id,
             'job': {
                 'placement': {
                     'clusterName': cluster_name
                 },
                 'pysparkJob': {
-                    'mainPythonFileUri': 'gs://{}/{}'.format(bucket_name, filename),
-                    'pythonFileUris': 
+                    'mainPythonFileUri': base_uri.format(bucket, main_file),
+                    'pythonFileUris': map(lambda x: base_uri.format(bucket, x),
+                        [e for e in kwargs['pyspark_job']['py_files'] if e !=
+                    kwargs['pyspark_job']['main_file']]), 
+                    'args': args  
                 }
             }
         } 
+        job = self.con.projects().regions().jobs().submit(projectId=project_id,
+            region=region, body=body).execute(num_retries=3)
+        return job

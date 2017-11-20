@@ -51,14 +51,18 @@ def export():
 @app.route("/dataproc_dimsum", methods=['POST'])
 def dataproc_dimsum():
     try:
-        #setup = config['jobs']['run_dimsum']['create_cluster']
-        #job = gcp_service.dataproc.build_cluster(**setup)
+        extended_args = request.form.get('extended_args').split(',')
+        print 'extended args', extended_args
+        setup = config['jobs']['run_dimsum']
+        job = gcp_service.dataproc.build_cluster(**setup)
         #print 'VALUE OF JOB', job
-        #result = gcp_service.dataproc.delete_cluster(**setup)
-        #print 'VALUE OF RESULT DELETION: ', result
         #gcp_service.storage.upload_from_filenames(
         #    **config['jobs']['run_dimsum']['pyspark_job'])
-        
+        #result = gcp_service.dataproc.delete_cluster(**setup)
+        #print 'VALUE OF RESULT DELETION: ', result
+        job = gcp_service.dataproc.submit_pyspark_job(extended_args,
+             **config['jobs']['run_dimsum'])
+        print "dataproc job; ", job
     except Exception as err:
         print str(err)
     return "ok"
