@@ -104,7 +104,6 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
         self.assertEqual(response.status_int, 200)                              
 
 
-
     @mock.patch('gae.worker.request')                                  
     @mock.patch('gae.utils.uuid')                                      
     @mock.patch('gae.worker.gcp_service')
@@ -117,7 +116,6 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
             self.worker.config = self.load_mock_config()                        
         today_str = (datetime.datetime.now() -
              datetime.timedelta(days=1)).strftime("%Y%m%d")
-
 
         query_job_body = self.utils.load_query_job_body(today_str,           
             **self.worker.config)               
@@ -134,3 +132,56 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
         service_mock.bigquery.execute_job.assert_any_call(*['project123',
             extract_job_body])                                                  
         self.assertEqual(response.status_int, 200)                      
+
+
+    @mock.patch('gae.worker.scheduler')
+    @mock.patch('gae.worker.request')                                  
+    @mock.patch('gae.worker.gcp_service')
+    def test_dataproc_dimsum(self, service_mock, request_mock,scheduler_mock):
+        request_mock.form.get.return_value = '--days_init=3,days_end=2' 
+        # this means that the config file is a pre-defined one              
+        # so we need to replace it in this test                                 
+        if not self._remove_config_flag:                                        
+            self.worker.config = self.load_mock_config()                        
+
+        response = self._test_app.post("/dataproc_dimsum")           
+        service_mock.dataproc.build_cluster.assert_called_once_with(
+            cluster_name='cluster_name',
+            create_cluster={'master_type': 'instance-1',
+                            'worker_type': u'instance-2',
+                            'worker_num_instances': 2},
+            project_id='project123',
+            pyspark_job={'py_files': ['basename/1.py', 'basename/2.py'],
+                         'bucket': 'bucket_name',
+                         'default_args': ['--source_uri=gs://source/file.gz'],
+                         'main_file': 'basename/main.py'},
+            zone=u'region-1')
+
+        service_mock.storage.upload_from_filenames.assert_called_once_with(
+            bucket='bucket_name',
+            default_args=['--source_uri=gs://source/file.gz'],
+            main_file='basename/main.py', py_files=['basename/1.py',
+                                                    'basename/2.py'])
+
+        service_mock.dataproc.submit_pyspark_job.assert_called_with([
+            '--days_init=3', 'days_end=2'], cluster_name='cluster_name',
+             create_cluster={'master_type': 'instance-1',
+                             'worker_type': 'instance-2',
+                             'worker_num_instances': 2},
+             project_id='project123',
+             pyspark_job={'py_files': ['basename/1.py', 'basename/2.py'],
+                          'bucket': 'bucket_name', 'default_args': [
+                '--source_uri=gs://source/file.gz'],
+                'main_file': 'basename/main.py'}, zone='region-1')
+
+        service_mock.dataproc.delete_cluster.assert_called_once_with(
+            cluster_name='cluster_name', create_cluster={
+                'worker_type': 'instance-2', 'master_type': 'instance-1',
+                'worker_num_instances': 2}, project_id='project123',
+            pyspark_job={'py_files': ['basename/1.py', 'basename/2.py'],
+                          'bucket': 'bucket_name', 'default_args': [
+                '--source_uri=gs://source/file.gz'],
+                'main_file': 'basename/main.py'}, zone='region-1')
+
+        scheduler_mock.run.assert_called_once_with(
+            {'url': '/prepare_datastore', 'target': u'df_service'}) 

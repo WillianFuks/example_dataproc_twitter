@@ -1,30 +1,49 @@
 config = {"jobs":{
-             "export_customers":{
-                 "query_job": {
-                     "source": {
-                           "table_id": "source_table",
-                           "dataset_id": "source_dataset",
-                           "project_id": "project123",
-                           "query_path": "tests/unit/data/gae/test_query.sql"
-                     },
-                     "destination": {
-                         "table_id": "dest_table",
-                         "dataset_id": "dest_dataset",
-                         "project_id": "project123"
-                     }
+              "export_customers":{
+                  "query_job": {
+                      "source": {
+                            "table_id": "source_table",
+                            "dataset_id": "source_dataset",
+                            "project_id": "project123",
+                            "query_path": "tests/unit/data/gae/test_query.sql"
+                      },
+                      "destination": {
+                          "table_id": "dest_table",
+                          "dataset_id": "dest_dataset",
+                          "project_id": "project123"
+                      }
     
-                 },
-                 "extract_job": {
-                     "table_id": "extract_table",
-                     "dataset_id": "extract_dataset",
-                     "project_id": "project123",
-                     "output": "gs://bucket/output/{date}/result.gz",
-                     "format": "CSV",
-                     "compression": "GZIP"
-                 }
-             }
-        },
-        "general":{
-            "project_id": "project123"
-        }
-       }
+                  },
+                  "extract_job": {
+                      "table_id": "extract_table",
+                      "dataset_id": "extract_dataset",
+                      "project_id": "project123",
+                      "output": "gs://bucket/output/{date}/result.gz",
+                      "format": "CSV",
+                      "compression": "GZIP"
+                  }
+              },
+              "run_dimsum": {
+                  "project_id": "project123",
+                  "cluster_name": "cluster_name",
+                  "zone": "region-1",
+                  "create_cluster": {
+                      "master_type": "instance-1",
+                      "worker_num_instances": 2,
+                      "worker_type": "instance-2"
+                  },
+                  "pyspark_job": {
+                      "bucket": "bucket_name",
+                      "py_files": ["basename/1.py", "basename/2.py"],
+                      "main_file": "basename/main.py",
+                      "default_args": ["--source_uri=gs://source/file.gz"]
+                  }
+              },
+              "dataflow_export": {
+                  "dataflow_service": "df_service"  
+              }
+          },
+          "general":{
+              "project_id": "project123"
+          }
+         }

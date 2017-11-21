@@ -23,18 +23,34 @@ config = {"jobs":{
                      "compression": "GZIP"
                  }
              },
-            "run_dimsum": {
-                "create_cluster": {
-                    "project_id": "project id",
-                    "cluster_name": "name of dataproc cluster to build",
-                    "region": "region where to create cluster",
-                    "master_type": "computing instance type",
-                    "worker_num_instances": "how many workers to create",
-                    "worker_type": "computing instance for workers"                
-                }
-            }
-         },
-         "general": {
-             "project_id": "Main GCP project id"
-         }
-      }
+             "run_dimsum": {
+                 "project_id": "project where to run job",
+                 "cluster_name": "cluster where to run job",
+                 "zone": "valid zone to run the job",
+                 "create_cluster": {
+                     "master_type": "GCE computing instance",
+                     "worker_num_instances": "# of workers",
+                     "worker_type": "GCE computing instance"                
+                 },
+                 "pyspark_job":{
+                     "bucket": "bucket where py files are saved",
+                     "py_files": ["python files to feed the job"],
+                     "main_file": "name of main py files to run",
+                     "default_args": ["general arguments such as where to 
+                                      read source files from, intermediary
+                                      files, results and so on. It's appended
+                                      to arguments also passed as parameters
+                                      in the URL request"]
+
+                 }
+               },
+             "dataflow_export": {
+                "dataflow_service": "service name that is responsible for the
+                                     dataflow exportage to datastore"   
+             }
+          },
+          "general": {
+              "project_id": "mains project id",
+              "dataflow_service": "which service "
+          }
+        }
