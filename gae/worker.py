@@ -25,13 +25,16 @@ import utils
 from flask import Flask, request 
 from config import config
 from connector.gcp import GCPService
+from scheduler import SchedulerJob
 
 
 app = Flask(__name__)
 gcp_service = GCPService() 
+scheduler = SchedulerJob()
 
 @app.route("/export_customers", methods=['POST'])
 def export():
+    """Runs a query against BigQuery and export results to a GCS bucket."""
     date = (None if request.form.get('date') == 'None' else
         utils.process_url_date(request.form.get('date')))
 
@@ -50,19 +53,32 @@ def export():
 
 @app.route("/dataproc_dimsum", methods=['POST'])
 def dataproc_dimsum():
+    """Prepares whole environment to run DIMSUM spark job in Dataproc. After
+    the processing is over (this method waits until job is complete) then
+    schedules a new call to prepare Datastore with the resulting similarity
+    matrix we obtain from the algorithm."""
     try:
         extended_args = request.form.get('extended_args').split(',')
-        print 'extended args', extended_args
         setup = config['jobs']['run_dimsum']
-        #job = gcp_service.dataproc.build_cluster(**setup)
-        #print 'VALUE OF JOB', job
+        job = gcp_service.dataproc.build_cluster(**setup)
         gcp_service.storage.upload_from_filenames(
             **config['jobs']['run_dimsum']['pyspark_job'])
-        #result = gcp_service.dataproc.delete_cluster(**setup)
-        #print 'VALUE OF RESULT DELETION: ', result
         job = gcp_service.dataproc.submit_pyspark_job(extended_args,
              **config['jobs']['run_dimsum'])
-        print "dataproc job; ", job
+        result = gcp_service.dataproc.delete_cluster(**setup)
+        scheduler.run({'url': '/prepare_datastore',
+                       'target': config['general']['dataflow_service']})
     except Exception as err:
         print str(err)
-    return "ok"
+    return "finished"
+
+@app.route("/prepare_datastore", methods=['POST'])
+def prepare_datastore():
+    """With DIMSUM job completed, we run a Dataflow job to get results from 
+    GCS and save them properly into Datastore so we have quick access to
+    results which will allow us to build final recommendations for our
+    customers."""
+    print "im here man"
+    return "finished"
+
+
