@@ -87,7 +87,8 @@ class DataprocService(object):
                     'machineTypeUri': kwargs['create_cluster']['master_type'] 
                 },
                 'workerConfig': {
-                    'numInstances': kwargs['create_cluster']['worker_num_instances'],
+                    'numInstances': kwargs['create_cluster'][
+                        'worker_num_instances'],
                     'machineTypeUri': kwargs['create_cluster']['worker_type']
                 }
             }
@@ -113,16 +114,15 @@ class DataprocService(object):
         """
         mapping = itemgetter(1, 3)
         while True:
-            print "IM WAITING CLUSTER OPERATION"
             (project_id, region) = mapping(job['name'].split('/'))
             cluster_name = job['metadata']["clusterName"]
             cluster_status = self.get_cluster(cluster_name, project_id, region)
             if cluster_status['status']['state'] == 'ERROR':
                 raise Exception(result['status']['details'])
-            if cluster_status['status']['state'] == 'RUNNING':
-                break
+            if cluster_status['status']['state'] == 'DONE':
+                    return cluster_status 
             # as cluster operations takes longer then we wait more as well
-            time.sleep(30)
+            time.sleep(60)
 
 
     def wait_for_job(self, job, region):
@@ -141,7 +141,6 @@ class DataprocService(object):
         project_id = job['reference']['projectId']
         job_id = job['reference']['jobId']
         while True:
-            print "IM PROCESSING JOB YET"
             result = self.con.projects().regions().jobs().get(
                 projectId=project_id, region=region, jobId=job_id).execute(
                     num_retries=3)

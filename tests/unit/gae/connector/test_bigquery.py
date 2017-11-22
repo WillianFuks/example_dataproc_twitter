@@ -1,62 +1,62 @@
-#MIT License
-#
-#Copyright (c) 2017 Willian Fuks
-#
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
-#
-#The above copyright notice and this permission notice shall be included in all
-#copies or substantial portions of the Software.
-#
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-#SOFTWARE.
+    #MIT License
+    #
+    #Copyright (c) 2017 Willian Fuks
+    #
+    #Permission is hereby granted, free of charge, to any person obtaining a copy
+    #of this software and associated documentation files (the "Software"), to deal
+    #in the Software without restriction, including without limitation the rights
+    #to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    #copies of the Software, and to permit persons to whom the Software is
+    #furnished to do so, subject to the following conditions:
+    #
+    #The above copyright notice and this permission notice shall be included in all
+    #copies or substantial portions of the Software.
+    #
+    #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    #IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    #FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    #AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    #LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    #SOFTWARE.
 
 
-import unittest
-import mock
+    import unittest
+    import mock
 
-import googleapiclient
-import google.auth.credentials
-
-
-class TestGCPFactory(unittest.TestCase):
-    @staticmethod
-    def _make_credentials():
-        return mock.Mock(spec=google.auth.credentials.Credentials)
+    import googleapiclient
+    import google.auth.credentials
 
 
-    @staticmethod
-    def _get_target_klass():
-        from gae.connector.gcp import BigQueryService
+    class TestBigqueryService(unittest.TestCase):
+        @staticmethod
+        def _make_credentials():
+            return mock.Mock(spec=google.auth.credentials.Credentials)
 
 
-        return BigQueryService
+        @staticmethod
+        def _get_target_klass():
+            from gae.connector.gcp import BigQueryService
 
 
-    @mock.patch('gae.connector.bigquery.disco')
-    def test_cto(self, disco_mock):
-        mock_cre = self._make_credentials()
-        disco_mock.build.return_value = 'con'
-        klass = self._get_target_klass()(mock_cre) 
-        self.assertEqual(klass.con, 'con')
-        disco_mock.build.assert_called_once_with('bigquery', 'v2',
-            credentials=mock_cre)
+            return BigQueryService
 
 
-    @mock.patch('gae.connector.bigquery.disco')
-    def test_execute_job(self, disco_mock):
-        con_mock = mock.Mock()
-        disco_mock.build.return_value = con_mock
-        klass = self._get_target_klass()('cre') 
+        @mock.patch('gae.connector.bigquery.disco')
+        def test_cto(self, disco_mock):
+            mock_cre = self._make_credentials()
+            disco_mock.build.return_value = 'con'
+            klass = self._get_target_klass()(mock_cre) 
+            self.assertEqual(klass.con, 'con')
+            disco_mock.build.assert_called_once_with('bigquery', 'v2',
+                credentials=mock_cre)
+
+
+        @mock.patch('gae.connector.bigquery.disco')
+        def test_execute_job(self, disco_mock):
+            con_mock = mock.Mock()
+            disco_mock.build.return_value = con_mock
+            klass = self._get_target_klass()('cre') 
         
         job_mock = mock.Mock()
         resource_mock = mock.Mock()
@@ -135,18 +135,4 @@ class TestGCPFactory(unittest.TestCase):
         job = {"jobReference": {"projectId": "project123", "jobId": "1"}}
         with self.assertRaises(RuntimeError):
             klass.poll_job(job)
-
-   
-    
-
-
-
-
-
-
-
-
-
-
-
 

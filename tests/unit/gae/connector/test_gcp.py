@@ -69,3 +69,23 @@ class TestGCPFactory(unittest.TestCase):
         con = klass.bigquery
         self.assertEqual(con, 'con')
         self.assertTrue(klass.bigquery is not None)
+
+
+    @mock.patch('gae.connector.gcp.DataprocService')
+    def test_dataproc_property(self, dp_mock):
+        dp_mock.return_value = 'con'
+        klass = self._get_target_klass()(self._make_credentials()) 
+        self.assertTrue(klass._dataproc is None)
+        con = klass.dataproc
+        self.assertEqual(con, 'con')
+        self.assertTrue(klass.dataproc is not None)
+
+
+    @mock.patch('gae.connector.gcp.StorageService')
+    def test_storage_property(self, st_mock):
+        st_mock.return_value = 'con'
+        klass = self._get_target_klass()(self._make_credentials()) 
+        self.assertTrue(klass._storage is None)
+        con = klass.storage
+        self.assertEqual(con, 'con')
+        self.assertTrue(klass.storage is not None)
