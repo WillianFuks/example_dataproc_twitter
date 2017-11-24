@@ -40,7 +40,14 @@ config = {"jobs":{
                   }
               },
               "dataflow_export": {
-                  "dataflow_service": "df_service"  
+                  "dataflow_service": "df_service",
+                  "project_id": "project123",
+                  "template_location": "gcs_path",
+                  "temp_location": "temp_location",
+                  "zone": "zone-1",
+                  "max_workers": 2,
+                  "machine_type": "type1",
+                  "job_name": "job_name"
               }
           },
           "general":{

@@ -24,3 +24,4 @@
 from bigquery import BigQueryService
 from dataproc import DataprocService
 from storage import StorageService
+from dataflow import DataflowService

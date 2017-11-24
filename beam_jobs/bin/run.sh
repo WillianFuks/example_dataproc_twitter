@@ -1,1 +1,0 @@
-python2.7 run.py --output=gs://lbanor/dataproc_example/$(date -d "yesterday" '+%Y-%m-%d')/ --runner=DirectRunner --dataset_id=40663402 --project_id=dafiti-analytics --query_path=../queries/customers_interactions.sql --staging_location=gs://lbanor/dataproc_example/staging/ --temp_location=gs://lbanor/dataproc_example/tmp/ --job_name=dataproc_example
