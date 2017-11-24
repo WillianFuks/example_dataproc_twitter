@@ -100,10 +100,33 @@ def session_system_dataproc(session, py):
                    ':/usr/local/spark/python/lib/py4j-0.10.4-src.zip')}
 
     session.run(
-    'py.test',
-    'tests/system/dataproc/',
-    '--cov=.',
-    '--cov-config=.coveragerc',
-    '--cov-report=html')
+        'py.test',
+        'tests/system/dataproc/',
+        '--cov=.',
+        '--cov-config=.coveragerc',
+        '--cov-report=html')
 
+def session_system_dataflow(session):
+    """This test also requires a secret keys located at ``/key.json`` to
+    connect to GCP and confirm Dataflow connected successfully to Datastore.
+    """
+    if not os.path.isfile('./dataflow/config.py'):
+        raise RuntimeError(("Please make sure to build the config.py file ",
+                            "in dataproc/config.py. You can use the template "
+                            "as a guide."))
+    session.interpreter = 'python2.7'
+    session.virtualenv_dirname = 'system-dataflow'
+
+    session.install('pytest', 'pytest-cov', 'mock', 'apache_beam',
+        r'apache_beam[gcp]', 'google-cloud-datastore', 'googledatastore')
+
+    session.env = {'PYTHONPATH': ':./:./dataflow/',
+                   'GOOGLE_APPLICATION_CREDENTIALS': '/key.json'}
+
+    session.run(
+        'py.test',
+        'tests/system/dataflow/test_export_datastore.py',
+        '--cov=.',
+        '--cov-config=.coveragerc',
+        '--cov-report=html')
 
