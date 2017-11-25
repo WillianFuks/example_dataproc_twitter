@@ -24,13 +24,35 @@
 import os
 import mock
 import unittest
-import dataflow.export_datastore as ds
+import dataflow.export_datastore as exporter
 from dataflow.config import config as config2
+import google.cloud.datastore as ds
+
 
 class TestExportDatastore(unittest.TestCase):
     @mock.patch("dataflow.config.config")
     def test_main(self, config_mock):
+        kind = 'unittest-example-dataproc'
         config2['input'] = 'tests/system/data/dataflow/*.json.gz'
+        config2['similarities_cap'] = 5
+        config2['kind'] = kind
         config_mock.items.return_value = config2.items()
-        ds.main()
-        self.assertTrue(False)
+        expected = {'sku0': {'items': ['sku8', 'sku7', 'sku6', 'sku5', 'sku4'],
+            'scores': [0.8, 0.7, 0.6, 0.5, 0.4]},
+                    'sku1': {'items': ['sku0', 'sku2', 'sku3', 'sku4', 'sku5'],
+            'scores': [0.8, 0.7, 0.6, 0.5, 0.4]},
+                    'sku2': {'items': ['sku2', 'sku0'],
+            'scores': [0.7, 0.2]}}
+        dsc = ds.Client()
+        keys = map(lambda x: dsc.key(kind, x), ['sku0', 'sku1', 'sku2'])
+
+        exporter.main()
+        ds_keys = dsc.get_multi(keys)
+        for key in ds_keys:
+            name = key.key.name
+            self.assertEqual(expected[name]['items'], key['items'])
+            self.assertEqual(expected[name]['scores'], key['scores'])
+
+        dsc.delete_multi(keys)
+        key0 = dsc.get(keys[0])
+        self.assertEqual(key0, None)

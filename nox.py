@@ -117,8 +117,10 @@ def session_system_dataflow(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'system-dataflow'
 
-    session.install('pytest', 'pytest-cov', 'mock', 'apache_beam',
-        r'apache_beam[gcp]', 'google-cloud-datastore', 'googledatastore')
+    session.install('pytest', 'pytest-cov', 'mock', 'apache_beam')
+    session.install('apache_beam[gcp]')
+    session.install('google-cloud-datastore')
+    session.install('six==1.10.0')
 
     session.env = {'PYTHONPATH': ':./:./dataflow/',
                    'GOOGLE_APPLICATION_CREDENTIALS': '/key.json'}
