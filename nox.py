@@ -48,7 +48,7 @@ def session_unit_gae(session):
 
     session.run(
         'py.test',
-        'tests/unit/gae/connector/test_storage.py',
+        'tests/unit/gae/test_main.py',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')
@@ -127,7 +127,7 @@ def session_system_dataflow(session):
 
     session.run(
         'py.test',
-        'tests/system/dataflow/test_export_datastore.py',
+        'tests/system/dataflow/test_build_datastore_template.py',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')

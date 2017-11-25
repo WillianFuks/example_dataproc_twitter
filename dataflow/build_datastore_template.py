@@ -32,7 +32,8 @@ import datetime
 import json
 
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions
+from apache_beam.options.pipeline_options import (PipelineOptions,
+    SetupOptions)
 from apache_beam.io.gcp.datastore.v1.datastoreio import WriteToDatastore
 from google.cloud.proto.datastore.v1 import entity_pb2
 from googledatastore.helper import add_properties, add_key_path
@@ -126,12 +127,12 @@ class EntityWrapper(object):
  
 def main():
     args, pipe_args = process_pipe_options()
+    pipe_args.view_as(SetupOptions).save_main_session = True
     with beam.Pipeline(options=pipe_args) as p:
         (p | 'Read Similarities' >> beam.io.ReadFromText(args.input)
            | "Create Entities" >> beam.Map(
                EntityWrapper(args.kind, args.sim_cap).make_entity)
            | "Write to DS" >> WriteToDatastore(args.project))
-           #| 'Write Results' >> beam.io.WriteToText(args.kind))
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -29,14 +29,19 @@ import time
 import google.auth.credentials
 import googleapiclient.discovery as disco
 from google.auth import app_engine
-from . import BigQueryService, DataprocService, StorageService
+from . import (BigQueryService, DataprocService, StorageService,
+    DataflowService)
 
 
-class GCPService(BigQueryService, DataprocService, StorageService):
+class GCPService(BigQueryService,
+                 DataprocService,
+                 StorageService,
+                 DataflowService):
     _credentials = None
     _bigquery = None
     _dataproc = None
     _storage = None
+    _dataflow = None
     def __init__(self, credentials=None):
         """Builds a connector to interact with Google Cloud tools.
 
@@ -52,11 +57,11 @@ class GCPService(BigQueryService, DataprocService, StorageService):
                             "google.auth.credentials") 
         # if no ``credentials`` is sent then assume we are running this
         # code in AppEngine environment
-        #self._credentials = (app_engine.Credentials() if not credentials else
-        #    credentials)
-        from google.oauth2 import service_account
-        self._credentials = (service_account.Credentials.\
-            from_service_account_file('./key.json'))            
+        self._credentials = (app_engine.Credentials() if not credentials else
+            credentials)
+        #from google.oauth2 import service_account
+        #self._credentials = (service_account.Credentials.\
+        #    from_service_account_file('./key.json'))            
 
 
     @property
@@ -78,3 +83,9 @@ class GCPService(BigQueryService, DataprocService, StorageService):
         if not self._storage:
             self._storage = StorageService(self._credentials)
         return self._storage
+
+    @property
+    def dataflow(self):
+        if not self._dataflow:
+            self._dataflow = DataflowService(self._credentials)
+        return self._dataflow

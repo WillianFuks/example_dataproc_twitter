@@ -89,3 +89,13 @@ class TestGCPFactory(unittest.TestCase):
         con = klass.storage
         self.assertEqual(con, 'con')
         self.assertTrue(klass.storage is not None)
+
+
+    @mock.patch('gae.connector.gcp.DataflowService')
+    def test_dataflow_property(self, df_mock):
+        df_mock.return_value = 'con'
+        klass = self._get_target_klass()(self._make_credentials()) 
+        self.assertTrue(klass._dataflow is None)
+        con = klass.dataflow
+        self.assertEqual(con, 'con')
+        self.assertTrue(klass.dataflow is not None)

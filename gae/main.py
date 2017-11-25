@@ -39,10 +39,5 @@ def run_job(job_name):
     :type job_name: str
     :param job_name: specifies which job to run.
     """
-    try:
-        scheduler = jobs_factory.factor_job(job_name)()
-        scheduler.run(request.args)
-    except Exception as err:
-        print str(err)
-    return str(job)
-
+    scheduler = jobs_factory.factor_job(job_name)()
+    return str(scheduler.run(request.args))

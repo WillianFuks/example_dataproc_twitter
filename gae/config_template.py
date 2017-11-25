@@ -43,11 +43,20 @@ config = {"jobs":{
                                       in the URL request"]
 
                  }
-               },
+             },
              "dataflow_export": {
-                "dataflow_service": "service name that is responsible for the
-                                     dataflow exportage to datastore"   
-             }
+                 "dataflow_service": ("what service will be activated when "
+                                      "dataflow GAE URL is requested."),
+                 "project_id": "project id where template is located",
+                 "template_location": "path to template GCS path",
+                 "temp_location": "path to GCS temporary files",
+                 "zone": "which zone to initiate dataflow job",
+                 "max_workers": ("how many machines are allowed to spam to "
+                                 "complete dataflow job"),
+                 "machine_type": "google compute insance type to run the job",
+                 "job_name": "job name for dataflow job"
+             } 
+ 
           },
           "general": {
               "project_id": "mains project id",

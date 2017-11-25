@@ -24,7 +24,7 @@
 import os
 import mock
 import unittest
-import dataflow.export_datastore as exporter
+import dataflow.build_datastore_template as exporter
 from dataflow.config import config as config2
 import google.cloud.datastore as ds
 

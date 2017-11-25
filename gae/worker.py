@@ -74,9 +74,7 @@ def dataproc_dimsum():
 def prepare_datastore():
     """With DIMSUM job completed, we run a Dataflow job to get results from 
     GCS and save them properly into Datastore so we have quick access to
-    results which will allow us to build final recommendations for our
-    customers."""
-    print "im here man"
+    results to build final recommendations for our customers."""
+    result = gcp_service.dataflow.run_template(**config['jobs'][
+        'dataflow_export']) 
     return "finished"
-
-
