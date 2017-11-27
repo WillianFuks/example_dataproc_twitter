@@ -32,6 +32,7 @@ app = Flask(__name__)
 gcp_service = GCPService() 
 scheduler = SchedulerJob()
 
+
 @app.route("/export_customers", methods=['POST'])
 def export():
     """Runs a query against BigQuery and export results to a GCS bucket."""
@@ -51,6 +52,7 @@ def export():
         extract_job_body)
     return "finished"
 
+
 @app.route("/dataproc_dimsum", methods=['POST'])
 def dataproc_dimsum():
     """Prepares whole environment to run DIMSUM spark job in Dataproc. After
@@ -69,6 +71,7 @@ def dataproc_dimsum():
                    'target': config['jobs']['dataflow_export'][
                                 'dataflow_service']})
     return "finished"
+
 
 @app.route("/prepare_datastore", methods=['POST'])
 def prepare_datastore():

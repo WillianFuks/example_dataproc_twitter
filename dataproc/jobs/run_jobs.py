@@ -45,6 +45,7 @@ def get_alg(args):
     args = parser.parse_args(args)
     return args
 
+
 def main():
     alg = get_alg(sys.argv[1:]).algorithm
     if alg:
@@ -53,8 +54,6 @@ def main():
             [e for e in sys.argv[1:] if 'algorithm' not in e])
         with pyspark.SparkContext() as sc:
             job.run(sc, args)
-        #    job.transform_data(sc, args)
-        #    job.build_marreco(sc, args)
     
 
 if __name__ == '__main__':

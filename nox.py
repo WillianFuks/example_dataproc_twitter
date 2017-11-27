@@ -44,14 +44,16 @@ def session_unit_gae(session):
     # we set ``gae/exporter`` in PYTHONPATH as well since this becomes
     # the root directory when App Engine starts the wsgi server
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
-                                  'google_appengine/:./:./gae/')}
+        'google_appengine/:./:./gae/:/google-cloud-sdk/platform/'
+        'google_appenigne/lib/yaml/lib')}
 
     session.run(
         'py.test',
-        'tests/unit/gae/test_utils.py',
+        'tests/unit/gae/',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')
+
 
 def session_system_gae(session):
     """Runs integration tests. As this runs a real query against BigQuery,
@@ -77,6 +79,7 @@ def session_system_gae(session):
     session.run(
         'py.test',
         'tests/system/gae/')
+
 
 @nox.parametrize('py', ['2.7', '3.6'])
 def session_system_dataproc(session, py):
@@ -106,6 +109,7 @@ def session_system_dataproc(session, py):
         '--cov-config=.coveragerc',
         '--cov-report=html')
 
+
 def session_system_dataflow(session):
     """This test also requires a secret keys located at ``/key.json`` to
     connect to GCP and confirm Dataflow connected successfully to Datastore.
@@ -131,4 +135,3 @@ def session_system_dataflow(session):
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')
-

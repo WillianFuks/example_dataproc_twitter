@@ -39,7 +39,6 @@ class BigQueryService(object):
     def __init__(self, credentials):
         self.con = disco.build('bigquery', 'v2', credentials=credentials)
 
-
     def execute_job(self, project_id, body):
         """Executes a job to run in GCP.
     
@@ -51,7 +50,6 @@ class BigQueryService(object):
         """
         return self.con.jobs().insert(projectId=project_id,
             body=body).execute(num_retries=3)
-    
 
     def poll_job(self, job):
         """Waits for a job to complete.
@@ -62,7 +60,6 @@ class BigQueryService(object):
         request = self.con.jobs().get(
             projectId=job['jobReference']['projectId'],
             jobId=job['jobReference']['jobId'])
-
         while True:
             result = request.execute(num_retries=3)
             if result['status']['state'] == 'DONE':

@@ -66,7 +66,6 @@ class DFNaiveJob(JobsBase):
             stypes.StructField('sku1', stypes.StringType()),
             stypes.StructField('cor', stypes.FloatType())])))
 
-
     @staticmethod
     def process_intersections(row):
         """Process all intersections between the items a given customer
@@ -85,7 +84,6 @@ class DFNaiveJob(JobsBase):
                 r.append((row[i][0], row[j][0], row[i][1] * row[j][1]))
         return r
 
-
     @staticmethod
     def squared(row):
         """Returns all items with squared score for each customer.
@@ -98,7 +96,6 @@ class DFNaiveJob(JobsBase):
                   as [('sku0', 0.25), ('sku1', 1)]
         """
         return [(e[0], e[1] ** 2) for e in row]
-
 
     def run(self, sc, args):
         """Main method to build the algorithm, its specifications and results.
@@ -145,7 +142,6 @@ class DFNaiveJob(JobsBase):
         self.transform_data(sc, args)
         self.build_df_naive(sc, args)
 
-
     def build_df_naive(self, sc, args):
         """Builds naive approach of neighborhood algorithm whose BigO is 
         proportional to nL^2 where n is the number of users being evaluated
@@ -177,12 +173,10 @@ class DFNaiveJob(JobsBase):
           :param args.users_matrix_uri: URI for where to save matrix of users
                                         and their interacted skus.
         """
-        print('AND NOW THE SHOW BEGINS ')
         spark = SparkSession(sc)
         data = spark.createDataFrame(sc.emptyRDD(),
             schema=self.load_users_schema())
         for day in range(args.days_init, args.days_end - 1, -1):
-            print('PROCESSING DAY: ', day)
             formatted_day = self.get_formatted_date(day)
             inter_uri = args.inter_uri.format(formatted_day)
 
@@ -190,17 +184,12 @@ class DFNaiveJob(JobsBase):
                 schema=self.load_users_schema()))
         
         self.register_udfs(spark, sc)
-        print('UDFS REGISTERED')
         data.createOrReplaceTempView('data')
-        print('DATA 3 ', data.head(3))
         spark.sql(self.query_norms).createOrReplaceTempView('norms')
-        print('QUERY NORMS PERFORMED')
         spark.sql(self.query_similarities).createOrReplaceTempView(
             'similarities')
-        print('QUERY SIMILARITIES PERFORMED \n')
         spark.sql(self.query_results).write.json(args.neighbor_uri,
             compression='gzip', mode='overwrite')
-
 
     @property
     def query_norms(self):
@@ -215,7 +204,6 @@ class DFNaiveJob(JobsBase):
                   )
                   GROUP BY 1
                """
-
 
     @property
     def query_similarities(self):
@@ -251,7 +239,6 @@ class DFNaiveJob(JobsBase):
                   ) c
                   ON a.sku1 = c.sku0
                """
-
 
     @property
     def query_results(self):

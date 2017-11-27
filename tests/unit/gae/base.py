@@ -21,28 +21,36 @@
 #SOFTWARE.
 
 
-from scheduler import SchedulerJob
+import json
+import unittest
+import mock
+import datetime
+import os
+import shutil
 
 
-class JobsFactory(object):
-    """Builds the specified job for GAE."""
-    scheduler = SchedulerJob 
-    def factor_job(self, job_name):
-        """Selects one of the available jobs.
+class BaseTests(object):
+    config1_path = 'gae/config.py'
+    config2_path = 'gae/config2.py'            
+    test_config = 'tests/unit/data/gae/test_config.json'
+    _recover_flg = False
+    _utils = None
+    def prepare_environ(self):
+        if os.path.isfile(self.config1_path):
+            shutil.copyfile(self.config1_path, self.config2_path)
+            self._recover_flg = True
+        shutil.copyfile(self.test_config, self.config1_path) 
 
-        :type job_name: str
-        :param job_name: name of job to build.
-        """
-        if job_name in self.available_jobs:
-            return self.scheduler 
+    def clean_environ(self):
+        if self._recover_flg:
+            shutil.copyfile(self.config2_path, self.config1_path)
+            os.remove(self.config2_path)
         else:
-            raise TypeError("Please choose a valid job name")
-
+            os.remove(self.config1_path)
+    
     @property
-    def available_jobs(self):
-        """Jobs currently defined to be used in GAE.
-
-        :rtype: set
-        :returns: set with available jobs that can be used in GAE.    
-        """
-        return set(['export_customers_from_bq', 'run_dimsum'])
+    def utils(self):
+        if not self._utils:
+            import gae.utils as utils
+            self._utils = utils
+        return self._utils

@@ -58,6 +58,9 @@ config = {"jobs":{
              } 
  
           },
+          "recos": {
+              "kind": "the kind where data is saved in datastore"
+          },
           "general": {
               "project_id": "mains project id",
               "dataflow_service": "which service "

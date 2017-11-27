@@ -32,6 +32,7 @@ import googleapiclient.discovery as disco
 
 ZONE_URI = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'
 
+
 class DataprocService(object):
     """Implements requests to build clusters, run jobs and clean the system.
 
@@ -40,7 +41,6 @@ class DataprocService(object):
     """
     def __init__(self, credentials):
         self.con = disco.build('dataproc', 'v1', credentials=credentials)
-
 
     def build_cluster(self, **kwargs):
         """Builds a new dataproc cluster ready to receive jobs.
@@ -99,7 +99,6 @@ class DataprocService(object):
         self.wait_cluster_operation(result)
         return result
 
-
     def wait_cluster_operation(self, job):
         """Waits for the asynchronous operation (either creation or deletion)
         of the cluster by constantly asking the backend system how is the
@@ -123,7 +122,6 @@ class DataprocService(object):
                     return cluster_status 
             # as cluster operations takes longer then we wait more as well
             time.sleep(60)
-
 
     def wait_for_job(self, job, region):
         """Waits for a submitted pyspark job to complete.
@@ -152,7 +150,6 @@ class DataprocService(object):
             # accordingly.
             time.sleep(60)
 
-
     def get_cluster(self, name, project_id, region):
         """Gets a specific cluster.
 
@@ -172,7 +169,6 @@ class DataprocService(object):
             projectId=project_id, region=region).execute(num_retries=3)
         return ([e for e in result.get('clusters', [{}]) if
             e.get('clusterName', [{}]) == name] or [{}])[0]
- 
 
     def delete_cluster(self, **kwargs):
         """Deletes a specific dataproc cluster.
@@ -199,7 +195,6 @@ class DataprocService(object):
 
         self.wait_cluster_operation(result)
         return result
-
 
     def submit_pyspark_job(self, extended_args, **kwargs):
         """Submits a pyspark job to the dataproc cluster.

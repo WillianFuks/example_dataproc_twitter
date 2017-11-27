@@ -49,8 +49,6 @@ def process_pipe_options():
         from config import config 
     except ImportError:
         raise ImportError("Please create a config file to run this job")
-
-    print "AND CONFIG IS", config
     parser = argparse.ArgumentParser()
     parser.add_argument('--input',
                         dest='input',
@@ -70,7 +68,6 @@ def process_pipe_options():
                         type=int,
                         help=('How many items and scores are allowed to be ',
                               'exported to DS'))
-
     args = ["--{}={}".format(k, v) for k, v in config.items()]
     args, pipe_args = parser.parse_known_args(args)
     pipe_args.extend(['--project={}'.format(args.project)])
@@ -93,13 +90,11 @@ class EntityWrapper(object):
         self._kind = kind
         self._sim_cap = sim_cap
 
-
     @property
     def sim_cap(self):
         """property definition to return either value of self._sim_cap or
         -1 if defined value is None"""
         return  self._sim_cap or -1
-
 
     def make_entity(self, content):
         """Transform each row from input file to DS Entity.
@@ -110,7 +105,6 @@ class EntityWrapper(object):
         :rtype: `entity_pb2.Entity`
         :returns: Entity created for each line of input file.
         """
-        print "sim cap", type(self.sim_cap)
         sku_base, similarities = itemgetter('item', 'similarity_items')(
             json.loads(content))
         entity = entity_pb2.Entity()
@@ -134,6 +128,6 @@ def main():
                EntityWrapper(args.kind, args.sim_cap).make_entity)
            | "Write to DS" >> WriteToDatastore(args.project))
 
+
 if __name__ == '__main__':
     sys.exit(main())
-

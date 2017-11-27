@@ -63,20 +63,17 @@ class GCPService(BigQueryService,
         #self._credentials = (service_account.Credentials.\
         #    from_service_account_file('./key.json'))            
 
-
     @property
     def bigquery(self):
         if not self._bigquery:
             self._bigquery = BigQueryService(self._credentials) 
         return self._bigquery
 
-
     @property
     def dataproc(self):
         if not self._dataproc:
             self._dataproc = DataprocService(self._credentials)
         return self._dataproc
-
 
     @property
     def storage(self):

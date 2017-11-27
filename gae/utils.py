@@ -34,6 +34,7 @@ from config import config
 
 SCORES = {'browsed': 0.5, 'basket': 2., 'purchased': 6.}
 
+
 def get_yesterday_date():
     """Returns datetime for yesterday value
     :rtype: `datetime.datetime`
@@ -94,7 +95,6 @@ def load_query_job_body(date, **kwargs):
                 }
             }
 
-
 def load_query(date=None, **kwargs):
     """Reads a query from a source file.
 
@@ -136,7 +136,6 @@ def load_extract_job_body(date=None, **kwargs):
     date = (get_yesterday_date().strftime("%Y-%m-%d") if not date else
        format_date(date))
     output = value['output'].format(date=date)
-
     return {
         'jobReference': {
             'projectId': value['project_id'],
@@ -191,7 +190,6 @@ def process_url_date(date):
             raise
     return date
 
-
 def process_input_items(args):
     """Process input items to prepare for recommendation.
 
@@ -216,14 +214,12 @@ def process_input_items(args):
         Counter(args[k].split(',')).items()}) or Counter() for k in
         set(SCORES.keys()) & set(args.keys())], Counter())
 
-
 class SkuModel(ndb.Model):
     @classmethod
     def _get_kind(cls):
         return config['recos']['kind']
     items = ndb.StringProperty(repeated=True)
     scores = ndb.FloatProperty(repeated=True)
-
 
 def process_recommendations(entities, scores, n=10):
     """Process items and scores from entities retrieved from Datastore, combine
@@ -245,13 +241,8 @@ def process_recommendations(entities, scores, n=10):
     :rtype: list
     :returns: list with top skus to recommend.
     """
-    print 'VALUE OF ENTITIES', entities
-    print 'VALUE OF SCORES', scores
     r = sum([Counter({e.items[i]: e.scores[i] * scores[e.key.id()]
         for i in range(len(e.items))}) for e in entities], Counter()).items()
     heapq.heapify(r)
-    print 'VALUE OF R IS', r
     return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
         n, r, key= lambda x: x[1])]}
-
-

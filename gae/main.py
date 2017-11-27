@@ -36,6 +36,7 @@ import time
 app = Flask(__name__)
 jobs_factory = JobsFactory()
 
+
 @app.route("/run_job/<job_name>/")
 def run_job(job_name):
     """This method works as a central manager to choose which job to run
@@ -47,35 +48,18 @@ def run_job(job_name):
     scheduler = jobs_factory.factor_job(job_name)()
     return str(scheduler.run(request.args))
 
+
 @app.route("/make_recommendation")
 def make_reco():
     """Makes the final recommendations for customers. Receives as input all
     items a given customer interacted with such as browsed items, added to 
     basket and purchased ones. Returns a list of top selected recommendations.
     """
-    t0 = time.time()
-    print request.args
-    try:
-        scores = utils.process_input_items(request.args)
-    except Exception as er:
-        print str(er)
+    scores = utils.process_input_items(request.args)
     keys = map(lambda x: ndb.Key(config['recos']['kind'], x), scores.keys())
-    print 'VALUE OF KEYS', keys
     entities = [e for e in ndb.get_multi(keys) if e]
     if not entities:
         return jsonify(entities)
-    try:
-        #SkuModel = utils.SkuModel
-        #sku = SkuModel(items=['BO185SHF23CQA', 'QI783SCU72SVZ'],
-        #    scores=[0.8, 0.8], id="0253-00263-0489")
-        #r = ndb.put_multi([sku])
-        #print "DOES R HAS SOMETHING?", r
-        recos = utils.process_recommendations(entities, scores,
-            request.args.get('n', 10)) 
-        print 'AND THE VALUE OF RECOS IS', recos
-    except Exception as err:
-        print str(err)
-
-    print "VALUE OF KEYS ", keys
-    print "TIME ELAPSED: ", time.time()-t0
+    recos = utils.process_recommendations(entities, scores,
+        int(request.args.get('n', 10))) 
     return jsonify(recos) 

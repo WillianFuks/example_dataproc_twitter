@@ -108,10 +108,8 @@ class JobsBase(object):
             default=2.,
             help=('weight associated to adding a product to basket'))
 
-
         args = parser.parse_args(args)
         return args
-
 
     def transform_data(self, sc, args):
         """Gets input data from GCS, transforms it and saves to intermediary
@@ -171,7 +169,6 @@ class JobsBase(object):
             except (Py4JJavaError, AnalysisException):
                 self.process_day_input(sc, source_uri, inter_uri, args)
 
-
     @staticmethod
     def load_users_schema():
         """Loads schema with data type [user, [(sku, score), (sku, score)]]
@@ -186,14 +183,12 @@ class JobsBase(object):
         	   stypes.StringType()), stypes.StructField('score', 
         	    stypes.FloatType())])))])
 
-
     @abc.abstractmethod
     def run(self, sc, args):
         """Main method for each algorithm where results are calculated and
         exported to GCS.
         """
         raise NotImplementedError
-
 
     @staticmethod
     def get_formatted_date(day):
@@ -209,7 +204,6 @@ class JobsBase(object):
         """
         return (datetime.datetime.now() -
             datetime.timedelta(days=day)).strftime('%Y-%m-%d')
-
 
     def process_day_input(self, sc, source_uri, inter_uri, args, mode=None,
             compression='gzip'):
@@ -256,7 +250,6 @@ class JobsBase(object):
          .toDF(schema=self.load_users_schema())
          .write.json(inter_uri, compression=compression, mode=mode))
 
-
     @staticmethod
     def aggregate_skus(row):
         """Aggregates skus from customers and their respective scores.
@@ -271,7 +264,6 @@ class JobsBase(object):
         for inner_row in row[1]:
             d[inner_row[0]] += inner_row[1]
         yield (row[0], list(d.items()))
-
 
     def save_neighbor_matrix(self, neighbor_uri, data):
         """Turns similarities into the final neighborhood matrix. The schema
@@ -303,7 +295,6 @@ class JobsBase(object):
             .reduceByKey(operator.add)
             .toDF(schema=self.load_neighbor_schema())
             .write.json(neighbor_uri, compression='gzip', mode='overwrite'))
-
 
     def load_neighbor_schema(self):
         """Loads neighborhood schema for similarity matrix

@@ -39,7 +39,6 @@ class DataflowService(object):
     def __init__(self, credentials):
         self.con = disco.build('dataflow', 'v1b3', credentials=credentials)
 
-
     def run_template(self, **kwargs):
         """Runs a templated job. REST API definition can be found here:
 
@@ -81,6 +80,5 @@ class DataflowService(object):
                 "machineType": machine_type
             }
         }
-
         return self.con.projects().templates().create(
             projectId=project_id, body=body).execute(num_retries=3)
