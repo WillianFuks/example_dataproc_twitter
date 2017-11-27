@@ -25,6 +25,7 @@ import json
 import unittest
 import mock
 import datetime
+import os
 
 import gae.utils as utils
 
@@ -140,4 +141,66 @@ class TestUtils(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             utils.process_url_date("2017-10-10")
+
+
+class TestSkuModel(unittest.TestCase):
+    def setUp(self):
+        self._delete_config = False
+        if not os.path.isfile('gae/config.py'):
+            with open('gae/config.py', 'w') as f:
+                pass
+            self._delete_config = True 
+
+
+    def tearDown(self):
+        if self._delete_config:
+            os.remove('gae/config.py')
+
+            
+    @mock.patch('gae.utils.config')
+    def test_cto(self, config_mock):
+        config_mock.__getitem__.return_value = {"kind": "test_kind"}
+        items = ['sku0', 'sku1']
+        scores = [0.9, 0.8]
+        sku = utils.SkuModel(items=items, scores=scores, id='sku0')
+        self.assertEqual(sku.items, items)
+        self.assertEqual(sku.scores, scores)
+        self.assertEqual(sku.key.id(), 'sku0')
+        self.assertEqual(sku.key.kind(), 'test_kind')
+
+
+    def test_process_recommendations(self):
+        class Entity(object):
+            @property
+            def items(self):
+                return self._items
+            
+
+            @property
+            def scores(self):
+                return self._scores
+
+
+            @property
+            def key(self):
+                class foo(object): pass
+                f = foo()
+                f.__setattr__('id', lambda: self._id)
+                return f
+
+            def __init__(self, items, scores, id):
+                self._items = items
+                self._scores = scores
+                self._id = id
+
+            def __repr__(self):
+                return """Entity(id={}, items={}, scores={})""".format(
+                    self._id, self.items, self.scores)
+        entities = [Entity(['sku1', 'sku2'], [0.9, 0.8], 'sku0'),
+                    Entity(['sku0', 'sku2'], [0.8, 0.6], 'sku1')]
+        scores = {'sku0': 0.5, 'sku1': 2}
+        recos = utils.process_recommendations(entities, scores) 
+        print recos
+        self.assertTrue(False)
+
 

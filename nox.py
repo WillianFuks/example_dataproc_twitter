@@ -48,7 +48,7 @@ def session_unit_gae(session):
 
     session.run(
         'py.test',
-        'tests/unit/gae/test_main.py',
+        'tests/unit/gae/test_utils.py',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')

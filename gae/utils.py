@@ -23,10 +23,16 @@
 
 """General functions to be used throught the exporter modules"""
 
-
+import heapq
 import datetime
 import uuid
+from collections import Counter
 
+from google.appengine.ext import ndb
+from config import config
+
+
+SCORES = {'browsed': 0.5, 'basket': 2., 'purchased': 6.}
 
 def get_yesterday_date():
     """Returns datetime for yesterday value
@@ -184,4 +190,68 @@ def process_url_date(date):
         except ValueError:
             raise
     return date
+
+
+def process_input_items(args):
+    """Process input items to prepare for recommendation.
+
+    :type args: dict
+    :param args:
+      :type args.browsed: str 
+      :param args.browsed: str of items that were navigated by current
+                           customer in a format like sku0,sku1,sku2.
+
+      :type args.basket: str 
+      :param args.basket: str of items comma separated corresponding to
+                          products added to basket.
+
+      :type args.purchased: str
+      :param args.purchased: str of items comma separated corresponding to
+                             products purchased.
+
+    :rtype: dict
+    :returns: dict of each item and total score interaction.  
+    """
+    return sum([Counter({sku: value * SCORES[k] for sku, value in
+        Counter(args[k].split(',')).items()}) or Counter() for k in
+        set(SCORES.keys()) & set(args.keys())], Counter())
+
+
+class SkuModel(ndb.Model):
+    @classmethod
+    def _get_kind(cls):
+        return config['recos']['kind']
+    items = ndb.StringProperty(repeated=True)
+    scores = ndb.FloatProperty(repeated=True)
+
+
+def process_recommendations(entities, scores, n=10):
+    """Process items and scores from entities retrieved from Datastore, combine
+    them up and sorts top n recommendations. 
+
+    :type entities: list of `ndb.Model`
+    :param entities: entities retrieved from Datastore, following expected
+                     pattern of ndb.Model(key=Key('kind', 'sku0'),
+                     items=['sku1', 'sku2'], scores=[0.1, 0.83])
+
+    :type scores: dict
+    :param scores: each key corresponds to a sku and the value is the score
+                   we observed our customer had with given sku, such as
+                   {'sku0': 2.5}.
+
+    :type n: int
+    :param n: returns ``n`` largest scores from list of recommendations.
+
+    :rtype: list
+    :returns: list with top skus to recommend.
+    """
+    print 'VALUE OF ENTITIES', entities
+    print 'VALUE OF SCORES', scores
+    r = sum([Counter({e.items[i]: e.scores[i] * scores[e.key.id()]
+        for i in range(len(e.items))}) for e in entities], Counter()).items()
+    heapq.heapify(r)
+    print 'VALUE OF R IS', r
+    return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
+        n, r, key= lambda x: x[1])]}
+
 
