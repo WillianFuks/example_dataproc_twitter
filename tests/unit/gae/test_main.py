@@ -25,24 +25,29 @@ import sys
 import os
 import mock
 import unittest
+import json
 
 import webtest
-from google.appengine.ext import testbed
+from google.appengine.ext import testbed, ndb
 from werkzeug.datastructures import ImmutableMultiDict
-from gae.main import app
+from base import BaseTests
 
 
-class TestMainService(unittest.TestCase):
-    test_app = webtest.TestApp(app)
-
+class TestMainService(unittest.TestCase, BaseTests):
+    test_app = None
     def setUp(self):
+        self.prepare_environ() 
+        from gae.main import app
+        self.test_app = webtest.TestApp(app)
         self.testbed = testbed.Testbed()
         self.testbed.activate()
-
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        ndb.get_context().clear_cache()
 
     def tearDown(self):
+        self.clean_environ()
         self.testbed.deactivate()
-
 
     @mock.patch('gae.main.jobs_factory')
     def test_run_job(self, factory_mock):
@@ -59,3 +64,79 @@ class TestMainService(unittest.TestCase):
         job_mock.run.assert_called_with(expected)
         self.assertEqual(response.status_int, 200)
 
+    @mock.patch("gae.main.time")
+    def test_make_reco(self, time_mock):
+        def round_result(result):
+            for i in range(len(result['result'])):
+                result['result'][i]['score'] = round(
+                    result['result'][i]['score'], 3)
+        time_mock.time.side_effect = [0, 1]
+        SkuModel = self.utils.SkuModel
+        sku1 = SkuModel(id='sku0', items=['sku1', 'sku2'],
+            scores=[0.9, 0.8])        
+        sku2 = SkuModel(id='sku1', items=['sku0', 'sku2'],
+            scores=[0.8, 0.5])
+        ndb.put_multi([sku1, sku2])
+        result = self.test_app.get('/make_recommendation?browsed=0,1')
+        self.assertEqual(result.json, {'statistics': {'elapsed_time': 1},
+            'results': []}) 
+
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get('/make_recommendation?browsed=sku0,sku1')
+        self.assertEqual(result.json, {'statistics': {'elapsed_time': 1},
+            'result': [{'item': u'sku2', 'score': 0.65},
+                {'item': u'sku1', 'score': 0.45},
+                {'item': u'sku0', 'score': 0.4}]})
+
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get(
+            '/make_recommendation?browsed=sku0&basket=sku1')
+        self.assertEqual(result.json, {'statistics': {'elapsed_time': 1},
+            'result': [
+                {'item': u'sku0', 'score': 1.6},
+                {'item': u'sku2', 'score': 1.4},
+                {'item': u'sku1', 'score': 0.45}]})
+
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get(
+            '/make_recommendation?browsed=sku0&purchased=sku1').json
+        round_result(result)
+        self.assertEqual(result, {'statistics': {'elapsed_time': 1},
+            'result': [
+                {'item': u'sku0', 'score': 4.8},
+                {'item': u'sku2', 'score': 3.4},
+                {'item': u'sku1', 'score': 0.45}]}) 
+
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get(
+            '/make_recommendation?basket=sku1').json
+        self.assertEqual(result, {'statistics': {'elapsed_time': 1},
+            'result': [{'item': u'sku0', 'score': 1.6},
+                {'item': u'sku2', 'score': 1.0}]})
+    
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get(
+            '/make_recommendation?purchased=sku0').json
+        round_result(result)
+        self.assertEqual(result, {'statistics': {'elapsed_time': 1},
+            'result': [{'item': u'sku1', 'score': 5.4},
+                       {'item': u'sku2', 'score': 4.8}]})
+
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get(
+            '/make_recommendation?purchased=sku0&basket=sku1&browsed=sku0')
+        result = result.json
+        round_result(result)
+        self.assertEqual(result, {'statistics': {'elapsed_time': 1},
+            'result': [{'item': u'sku2', 'score': 6.2},
+                {'item': u'sku1', 'score': 5.85},
+                {'item': u'sku0', 'score': 1.6}]})
+
+        time_mock.time.side_effect = [0, 1]
+        result = self.test_app.get(
+        '/make_recommendation?purchased=sku0&basket=sku1&browsed=sku0&n=1')
+        result = result.json
+        round_result(result)
+        self.assertEqual(result, {'statistics': {'elapsed_time': 1},
+            'result': [
+                {'item': 'sku2', 'score': 6.2}]})

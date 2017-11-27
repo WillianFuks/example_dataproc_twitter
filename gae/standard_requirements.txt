@@ -1,5 +1,5 @@
 flask
-six
+six==1.10.0
 pyasn1
 pyasn1_modules
 google-auth
@@ -7,5 +7,3 @@ google-api-python-client
 google-auth-httplib2
 pyyaml
 WebTest
-google-cloud-datastore
-gunicorn

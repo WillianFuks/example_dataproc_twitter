@@ -34,7 +34,6 @@ class TestDataprocService(unittest.TestCase):
     def _make_credentials():
         return mock.Mock(spec=google.auth.credentials.Credentials)
 
-
     @staticmethod
     def _get_target_klass():
         from gae.connector.gcp import DataprocService
@@ -42,13 +41,11 @@ class TestDataprocService(unittest.TestCase):
 
         return DataprocService
 
-
     @property
     def config_(self):
         _source_config = 'tests/unit/data/gae/test_config.json' 
         return json.loads(open(_source_config).read().replace( 
             "config = ", ""))
-
 
     @property
     def job_mock(self):
@@ -56,7 +53,6 @@ class TestDataprocService(unittest.TestCase):
                 "metadata": {"clusterName": "cluster_name"},
                 "reference": {"projectId": "project123",
                               "jobId": "job_id"}}
-
 
     @mock.patch('gae.connector.dataproc.disco')
     def test_cto(self, disco_mock):
@@ -66,7 +62,6 @@ class TestDataprocService(unittest.TestCase):
         self.assertEqual(klass.con, 'con')
         disco_mock.build.assert_called_once_with('dataproc', 'v1',
             credentials=mock_cre)
-
 
     @mock.patch('gae.connector.dataproc.DataprocService.get_cluster')
     @mock.patch('gae.connector.dataproc.disco')
@@ -78,7 +73,6 @@ class TestDataprocService(unittest.TestCase):
         klass = self._get_target_klass()(mock_cre) 
         with self.assertRaises(TypeError):
             klass.build_cluster(**config_['jobs']['run_dimsum'])
-
     
     @mock.patch('gae.connector.dataproc.DataprocService.wait_cluster_operation')
     @mock.patch('gae.connector.dataproc.DataprocService.get_cluster')
@@ -100,7 +94,6 @@ class TestDataprocService(unittest.TestCase):
         cluster_mock.create.return_value = creation_mock
         creation_mock.execute.return_value = 'result'
         
-        
         klass = self._get_target_klass()(mock_cre)
         klass.build_cluster(**config_['jobs']['run_dimsum'])
 
@@ -116,33 +109,36 @@ class TestDataprocService(unittest.TestCase):
  'https://www.googleapis.com/compute/v1/projects/project123/zones/region-1'}}},
              projectId='project123', region='region')
 
-
     @mock.patch('gae.connector.dataproc.time')
     @mock.patch('gae.connector.dataproc.DataprocService.get_cluster')
     @mock.patch('gae.connector.dataproc.disco')
-    def test_wait_cluster_creation(self, disco_mock, f_get_cluster_mock,
+    def test_wait_cluster_operation(self, disco_mock, f_get_cluster_mock,
         time_mock):
         f_get_cluster_mock.return_value = {}
         config_ = self.config_
         mock_cre = self._make_credentials()
         disco_mock.build.return_value = 'con'
-        klass = self._get_target_klass()(mock_cre) 
-        
-        f_get_cluster_mock.side_effect = [{'status': {'state': 'RUNNING'}},
-            {'status': {'state': 'DONE'}}]
+        klass = self._get_target_klass()(mock_cre)
+ 
+        f_get_cluster_mock.side_effect = [{'status': {'state': 'CREATING'}},
+            {'status': {'state': 'RUNNING'}}]
         job_mock = self.job_mock
 
         result = klass.wait_cluster_operation(job_mock)
-        self.assertEqual(result, {'status': {'state': 'DONE'}})
-        
-        f_get_cluster_mock.assert_called_with('cluster_name', 
+        self.assertEqual(result, {'status': {'state': 'RUNNING'}})
+ 
+        f_get_cluster_mock.assert_called_with('cluster_name',
             'project123', 'region')
         time_mock.sleep.assert_called_with(60)
-        
+ 
+        f_get_cluster_mock.side_effect = [{'status': {'state': 'CREATING'}},
+            {'cluster': 'cluster'}]
+        result = klass.wait_cluster_operation(job_mock)
+        self.assertEqual(result, {'cluster': "cluster"})
+
         f_get_cluster_mock.return_value = [{'status': {'state': 'ERROR'}}]
         with self.assertRaises(Exception):
             klass.wait_cluster_operation(job_mock)
-
 
     @mock.patch('gae.connector.dataproc.time')
     @mock.patch('gae.connector.dataproc.disco')
@@ -178,7 +174,6 @@ class TestDataprocService(unittest.TestCase):
 
         with self.assertRaises(Exception):
             klass.wait_for_job(job_setup, 'region')
-        
 
     @mock.patch('gae.connector.dataproc.disco')
     def test_get_cluster(self, disco_mock):
@@ -214,7 +209,6 @@ class TestDataprocService(unittest.TestCase):
         result = klass.get_cluster('name2', 'project123', 'region')        
         self.assertEqual(result, {})
         
-
     @mock.patch('gae.connector.dataproc.DataprocService.wait_cluster_operation')
     @mock.patch('gae.connector.dataproc.disco')
     def test_delete_cluster(self, disco_mock, wait_mock):
@@ -243,7 +237,6 @@ class TestDataprocService(unittest.TestCase):
             projectId='project123', region='region')
         execution_mock.execute(num_retries=3)
         wait_mock.assert_called_once_with('result')        
-
 
     @mock.patch('gae.connector.dataproc.DataprocService.wait_for_job')
     @mock.patch('gae.connector.dataproc.disco')

@@ -21,28 +21,37 @@
 #SOFTWARE.
 
 
-from scheduler import SchedulerJob
+"""Datastore Client. As this is supposed to be used in Flexible Environment,
+we'll be using the official google-cloud API. Notice also that this class
+is not used in GCPService as it's speficially designed for Standard Environment
+"""
 
 
-class JobsFactory(object):
-    """Builds the specified job for GAE."""
-    scheduler = SchedulerJob 
-    def factor_job(self, job_name):
-        """Selects one of the available jobs.
+import time
+import google.cloud.datastore as ds
 
-        :type job_name: str
-        :param job_name: name of job to build.
+
+class DatastoreService(object):
+    """Class to interact with Datastore's backend using google-cloud API.
+
+    :type credentials: `google.oauth.credentials.Credentials` 
+    :param credentials: credentials used to authenticate requests in GCP. 
+    """
+    def __init__(self, credentials=None):
+        self.client = (ds.Client(credentials=credentials) if credentials
+            else ds.Client())
+
+    def get_keys(self, kind, keys):
+        """Retrieves list of keys from Datastore.
+    
+        :type kind: str
+        :param kind: kind to retrieve keys from DS.
+
+        :type keys: list
+        :param keys: list of key names to retrieve data from.
+
+        :rtype: list
+        :returns: list with resulting keys retrieved from DS. 
+    
         """
-        if job_name in self.available_jobs:
-            return self.scheduler 
-        else:
-            raise TypeError("Please choose a valid job name")
-
-    @property
-    def available_jobs(self):
-        """Jobs currently defined to be used in GAE.
-
-        :rtype: set
-        :returns: set with available jobs that can be used in GAE.    
-        """
-        return set(['export_customers_from_bq', 'run_dimsum'])
+        return self.client.get_multi([self.client.key(kind, e) for e in keys])

@@ -34,7 +34,6 @@ class TestDataflowService(unittest.TestCase):
     def _make_credentials():
         return mock.Mock(spec=google.auth.credentials.Credentials)
 
-
     @staticmethod
     def _get_target_klass():
         from gae.connector.gcp import DataflowService
@@ -42,13 +41,11 @@ class TestDataflowService(unittest.TestCase):
 
         return DataflowService
 
-
     @property
     def config_(self):
         _source_config = 'tests/unit/data/gae/test_config.json' 
         return json.loads(open(_source_config).read().replace( 
             "config = ", ""))
-
 
     @mock.patch('gae.connector.dataflow.disco')
     def test_cto(self, disco_mock):
@@ -58,7 +55,6 @@ class TestDataflowService(unittest.TestCase):
         self.assertEqual(klass.con, 'con')
         disco_mock.build.assert_called_once_with('dataflow', 'v1b3',
             credentials=mock_cre)
-
 
     @mock.patch('gae.connector.dataflow.disco')
     def test_run_template(self, disco_mock):

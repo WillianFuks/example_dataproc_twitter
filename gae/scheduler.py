@@ -32,7 +32,6 @@ class SchedulerJob(object):
     def __init__(self):
         self.task = None
 
-
     def run(self, args): 
         """Executes the job.
 
@@ -59,7 +58,6 @@ class SchedulerJob(object):
         task = taskqueue.add(url=url, target=target, params=dict((i, v) for
             i, v in args.items() if i not in ['url', 'target']))
         self.task = task
- 
 
     def __str__(self):
         if not self.task:

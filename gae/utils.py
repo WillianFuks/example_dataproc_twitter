@@ -21,11 +21,17 @@
 #SOFTWARE.
 
 
-"""General functions to be used throught the exporter modules"""
+"""General functions to be used throught the services modules"""
 
 
+import heapq
 import datetime
 import uuid
+from collections import Counter
+import time
+
+from google.appengine.ext import ndb
+from config import config
 
 
 def get_yesterday_date():
@@ -88,7 +94,6 @@ def load_query_job_body(date, **kwargs):
                 }
             }
 
-
 def load_query(date=None, **kwargs):
     """Reads a query from a source file.
 
@@ -130,7 +135,6 @@ def load_extract_job_body(date=None, **kwargs):
     date = (get_yesterday_date().strftime("%Y-%m-%d") if not date else
        format_date(date))
     output = value['output'].format(date=date)
-
     return {
         'jobReference': {
             'projectId': value['project_id'],
@@ -185,3 +189,38 @@ def process_url_date(date):
             raise
     return date
 
+class SkuModel(ndb.Model):
+    @classmethod
+    def _get_kind(cls):
+        return config['recos']['kind']
+    items = ndb.StringProperty(repeated=True)
+    scores = ndb.FloatProperty(repeated=True)
+
+def process_recommendations(entities, scores, n=10):
+    """Process items and scores from entities retrieved from Datastore, combine
+    them up and sorts top n recommendations. 
+
+    :type entities: list of `ndb.Model`
+    :param entities: entities retrieved from Datastore, following expected
+                     pattern of ndb.Model(key=Key('kind', 'sku0'),
+                     items=['sku1', 'sku2'], scores=[0.1, 0.83])
+
+    :type scores: dict
+    :param scores: each key corresponds to a sku and the value is the score
+                   we observed our customer had with given sku, such as
+                   {'sku0': 2.5}.
+
+    :type n: int
+    :param n: returns ``n`` largest scores from list of recommendations.
+
+    :rtype: list
+    :returns: list with top skus to recommend.
+    """
+    t0 = time.time()
+    r = sum([Counter({e.items[i]: e.scores[i] * scores[e.key.id()]
+        for i in range(len(e.items))}) for e in entities], Counter()).items()
+    time_build_recos = time.time() - t0
+    t0 = time.time()
+    heapq.heapify(r)
+    return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
+        n, r, key= lambda x: x[1])]}

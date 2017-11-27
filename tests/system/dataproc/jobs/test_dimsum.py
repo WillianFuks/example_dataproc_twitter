@@ -37,7 +37,7 @@ import pyspark
 import pyspark.sql.types as stypes
 import dataproc.jobs.dimsum as dimsum
 from pyspark.sql import Row
-from base import BaseTest
+from base_fixture import BaseTest
 
 
 class TestSystemBaseDataprocJob(BaseTest):
@@ -46,11 +46,9 @@ class TestSystemBaseDataprocJob(BaseTest):
     def get_target_klass():
         return dimsum.DimSumJob
 
-
     @classmethod
     def setup_class(cls):
         cls.build_data(cls._base_path) 
-
 
     def teardown_class(cls):
         inter_path = "tests/system/data/dataproc/jobs/train/dimsum/inter/"
@@ -58,7 +56,6 @@ class TestSystemBaseDataprocJob(BaseTest):
             shutil.rmtree(inter_path)
         assert(os.path.isdir(inter_path) == False)
         cls.delete_data(cls._base_path) 
-
 
     def test_run_no_threshold(self, spark_context):
         klass = self.get_target_klass()()
@@ -95,7 +92,6 @@ class TestSystemBaseDataprocJob(BaseTest):
         shutil.rmtree(neighbor_uri)
         assert(os.path.isdir(neighbor_uri) == False)
 
-
     def test_run_with_threshold(self, spark_context):
         klass = self.get_target_klass()()
         source_uri = "tests/system/data/dataproc/jobs/train/dimsum/{}/"
@@ -120,10 +116,8 @@ class TestSystemBaseDataprocJob(BaseTest):
         di = np.diag(d)
         idi = np.linalg.inv(di)
         expected = np.dot(idi, np.dot(r1, idi))
-        print("THIS IS EXPECTED", expected)
         result = [json.loads(e) for e in 
                     spark_context.textFile(neighbor_uri).collect()]
-        print("AND THIS IS RESULT", result)
         correct, total = (0, 0)
         # The following is based on the theorem from
         # https://arxiv.org/pdf/1304.1467.pdf

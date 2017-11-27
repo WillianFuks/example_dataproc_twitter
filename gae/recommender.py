@@ -21,33 +21,31 @@
 #SOFTWARE.
 
 
-"""Main module working as entry point for routing different jobs and
-making recommendations."""
+"""Main module to build the Flexible Environment code so we are able to 
+make recommendations in a viable time."""
 
 
-import utils
+import time
 import base_utils
+
 from config import config
 from flask import Flask, request, jsonify
-from factory import JobsFactory
-from google.appengine.ext import ndb
-import time
+from connector.datastore import DatastoreService
 
 
 app = Flask(__name__)
-jobs_factory = JobsFactory()
 
 
-@app.route("/run_job/<job_name>/")
-def run_job(job_name):
-    """This method works as a central manager to choose which job to run
-    and respective input parameters.
-
-    :type job_name: str
-    :param job_name: specifies which job to run.
-    """
-    scheduler = jobs_factory.factor_job(job_name)()
-    return str(scheduler.run(request.args))
+class Con(object):
+    """This class was created so that we can isolate DatastoreService call
+    and unit test the application. Works essentially as a wrapper for the
+    connection."""
+    _datastore = None
+    @classmethod
+    def get_ds_client(cls):
+        if not cls._datastore:
+            cls._datastore = DatastoreService()
+        return cls._datastore
 
 
 @app.route("/make_recommendation")
@@ -57,16 +55,15 @@ def make_reco():
     basket and purchased ones. Returns a list of top selected recommendations.
     """
     t0 = time.time()
-    scores = base_utils.process_input_items(request.args)
-    keys = map(lambda x: ndb.Key(config['recos']['kind'], x),
-        scores.keys())
-    entities = [e for e in ndb.get_multi(keys) if e]
+    weights = base_utils.process_input_items(request.args)
+    entities = [{"id": e.key.name, "items": e.get('items'),
+        "scores": e.get('scores')} for e in
+        Con.get_ds_client().get_keys(config['recos']['kind'], 
+        weights.keys()) if e]
     if not entities:
-        result = {'results': [], 'statistics':
-            {'elapsed_time': time.time() - t0}}
+        result = {'results': [], 'elapsed_time': time.time() - t0}
         return jsonify(result)
-    results = utils.process_recommendations(entities, scores,
+    results = base_utils.cy_process_recommendations(entities, weights,
         int(request.args.get('n', 10))) 
-    results['statistics'] = {}
-    results['statistics']['elapsed_time'] = time.time() - t0 
+    results['elapsed_time'] = time.time() - t0
     return jsonify(results) 

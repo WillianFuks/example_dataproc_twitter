@@ -32,15 +32,14 @@ app = Flask(__name__)
 gcp_service = GCPService() 
 scheduler = SchedulerJob()
 
+
 @app.route("/export_customers", methods=['POST'])
 def export():
     """Runs a query against BigQuery and export results to a GCS bucket."""
     date = (None if request.form.get('date') == 'None' else
         utils.process_url_date(request.form.get('date')))
-
     query_job_body = utils.load_query_job_body(date,
         **config)
-
     job = gcp_service.bigquery.execute_job(config['general']['project_id'],
         query_job_body)
 
@@ -50,6 +49,7 @@ def export():
     gcp_service.bigquery.execute_job(config['general']['project_id'],
         extract_job_body)
     return "finished"
+
 
 @app.route("/dataproc_dimsum", methods=['POST'])
 def dataproc_dimsum():
@@ -69,6 +69,7 @@ def dataproc_dimsum():
                    'target': config['jobs']['dataflow_export'][
                                 'dataflow_service']})
     return "finished"
+
 
 @app.route("/prepare_datastore", methods=['POST'])
 def prepare_datastore():

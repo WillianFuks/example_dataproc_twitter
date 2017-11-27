@@ -36,11 +36,10 @@ class TestBigqueryService(unittest.TestCase):
 
     @staticmethod
     def _get_target_klass():
-        from gae.connector.gcp import BigQueryService
+        from gae.connector.bigquery import BigQueryService
 
 
         return BigQueryService
-
 
     @mock.patch('gae.connector.bigquery.disco')
     def test_cto(self, disco_mock):
@@ -50,7 +49,6 @@ class TestBigqueryService(unittest.TestCase):
         self.assertEqual(klass.con, 'con')
         disco_mock.build.assert_called_once_with('bigquery', 'v2',
             credentials=mock_cre)
-
 
     @mock.patch('gae.connector.bigquery.disco')
     def test_execute_job(self, disco_mock):
@@ -73,7 +71,6 @@ class TestBigqueryService(unittest.TestCase):
             **{'projectId': project_id, 'body': body})
         execute_mock.execute.assert_called_once_with(**{'num_retries': 3})
 
-
     @mock.patch('gae.connector.bigquery.time')
     @mock.patch('gae.connector.bigquery.disco')
     def test_poll_job(self, disco_mock, time_mock):
@@ -92,7 +89,6 @@ class TestBigqueryService(unittest.TestCase):
         job = {"jobReference": {"projectId": "project123", "jobId": "1"}}
         klass.poll_job(job)
         request_mock.execute.assert_called_once_with(**{'num_retries': 3})    
-    
     
     @mock.patch('gae.connector.bigquery.time')
     @mock.patch('gae.connector.bigquery.disco')
@@ -115,7 +111,6 @@ class TestBigqueryService(unittest.TestCase):
         request_mock.execute.assert_called_with(**{'num_retries': 3})    
         time_mock.sleep.assert_called_once_with(1)
     
-    
     @mock.patch('gae.connector.bigquery.time')
     @mock.patch('gae.connector.bigquery.disco')
     def test_poll_job(self, disco_mock, time_mock):
@@ -135,4 +130,3 @@ class TestBigqueryService(unittest.TestCase):
         job = {"jobReference": {"projectId": "project123", "jobId": "1"}}
         with self.assertRaises(RuntimeError):
             klass.poll_job(job)
-    

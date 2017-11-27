@@ -26,6 +26,7 @@ all correlations that there is between all products a given customer
 interacted. This leads to quadratic complexity times whose processing time
 is prohibitive for large amounts of data"""
 
+from __future__ import absolute_import
 
 import operator
 import math
@@ -35,6 +36,7 @@ import time
 from base import JobsBase
 from pyspark.sql import SparkSession
 from pyspark.sql import types as stypes
+
 
 class DimSumJob(JobsBase):
     """Implements the DIMSUM algorithm to solve the neighobrhood approach with
@@ -96,7 +98,6 @@ class DimSumJob(JobsBase):
         self.transform_data(sc, args)
         self.build_dimsum(sc, args)
 
-
     def build_dimsum(self, sc, args):
         """Builds dimsum approach for computing cosine similarities between
         columns of a matrix.
@@ -114,11 +115,13 @@ class DimSumJob(JobsBase):
           :param args.days_end: until what file to read input data.
         
           :type args.inter_uri: str
-          :param args.inter_uri: URI where intermediary results should be read from
+          :param args.inter_uri: URI where intermediary results should be
+                                 read from
         
           :type args.neighbor_uri: str
-          :param args.neighbor_uri: where to save final marreco matrix (similarity
-        		      and user_sku_score matrix).
+          :param args.neighbor_uri: where to save final marreco matrix (
+                                    similarity and user_sku_score matrix).
+
           :type args.inter_uri: str
           :param args.inter_uri: URI for where to save intermediary results.
 
@@ -144,7 +147,6 @@ class DimSumJob(JobsBase):
             .filter(lambda x: x[1] > 0.01))
         self.save_neighbor_matrix(args.neighbor_uri, data)
 
-
     def _run_DIMSUM(self, row, pq_b):
         """Implements DIMSUM as describe here:
         
@@ -154,7 +156,8 @@ class DimSumJob(JobsBase):
         :param row: list with values (user, [(sku, score)...])
 
         :rtype: list
-        :returns: similarities between skus in the form [(sku0, sku1, similarity)]
+        :returns: similarities between skus in the form
+                  [(sku0, sku1, similarity)]
         """
         for i in range(len(row)):
             if random.random() < pq_b.value[row[i][0]][0]:
@@ -165,7 +168,6 @@ class DimSumJob(JobsBase):
                         key = ((row[i][0], row[j][0]) if row[i][0] < row[j][0]
                                else (row[j][0], row[i][0]))
                         yield (key, value_i * value_j)
-
 
     def _broadcast_pq(self, sc, data, threshold):
         """Builds and broadcast probability ``p`` value and factor ``q`` for
@@ -187,14 +189,11 @@ class DimSumJob(JobsBase):
                       .reduceByKey(operator.add) 
                       .map(lambda x: (x[0], math.sqrt(x[1]))) 
                       .collect())}
-
         gamma = (math.sqrt(10 * math.log(len(norms)) / threshold) if threshold
                   > 1e-6 else float("inf"))
-
         pq_b = sc.broadcast({sku: (gamma / value, min(gamma, value))
                              for sku, value in norms.items()})        
         return pq_b
-
 
     @staticmethod
     def _process_scores(row):

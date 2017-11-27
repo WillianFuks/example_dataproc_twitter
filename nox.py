@@ -33,7 +33,7 @@ def session_unit_gae(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'unit-gae'
 
-    session.install('-r', 'tests/unit/gae/test_requirements.txt')
+    session.install('-r', 'tests/unit/data/gae/test_requirements.txt')
     session.install('pytest', 'pytest-cov', 'mock')
 
     if not os.path.isdir('/google-cloud-sdk/platform/google_appengine/'):
@@ -44,14 +44,16 @@ def session_unit_gae(session):
     # we set ``gae/exporter`` in PYTHONPATH as well since this becomes
     # the root directory when App Engine starts the wsgi server
     session.env = {'PYTHONPATH': (':/google-cloud-sdk/platform/' 
-                                  'google_appengine/:./:./gae/')}
+        'google_appengine/:./:./gae/:/google-cloud-sdk/platform/'
+        'google_appenigne/lib/yaml/lib')}
 
     session.run(
         'py.test',
-        'tests/unit/gae/test_main.py',
+        'tests/unit/gae/',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')
+
 
 def session_system_gae(session):
     """Runs integration tests. As this runs a real query against BigQuery,
@@ -61,7 +63,7 @@ def session_system_gae(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'system-gae'
 
-    session.install('-r', 'gae/exporter/requirements.txt')
+    session.install('-r', 'gae/standard_requirements.txt')
     session.install('google-cloud-bigquery==0.27.0')
 
     session.install('pytest', 'pytest-cov', 'mock')
@@ -77,6 +79,7 @@ def session_system_gae(session):
     session.run(
         'py.test',
         'tests/system/gae/')
+
 
 @nox.parametrize('py', ['2.7', '3.6'])
 def session_system_dataproc(session, py):
@@ -106,13 +109,14 @@ def session_system_dataproc(session, py):
         '--cov-config=.coveragerc',
         '--cov-report=html')
 
+
 def session_system_dataflow(session):
     """This test also requires a secret keys located at ``/key.json`` to
     connect to GCP and confirm Dataflow connected successfully to Datastore.
     """
     if not os.path.isfile('./dataflow/config.py'):
         raise RuntimeError(("Please make sure to build the config.py file ",
-                            "in dataproc/config.py. You can use the template "
+                            "in dataflow/config.py. You can use the template "
                             "as a guide."))
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'system-dataflow'
@@ -131,4 +135,3 @@ def session_system_dataflow(session):
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')
-

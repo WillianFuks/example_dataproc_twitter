@@ -32,7 +32,7 @@ bc = Client()
 class TestQueriesResults(unittest.TestCase):
     def test_queries(self):
         query = open(
-            "gae/exporter/queries/customers_interactions.sql").read().strip()
+            "gae/queries/customers_interactions.sql").read().strip()
         simulated_data = open(
             "tests/system/data/gae/test_query_customers.sql").read().strip()
         query = re.sub(r"`.*`", simulated_data, query)
@@ -55,6 +55,4 @@ class TestQueriesResults(unittest.TestCase):
                     (u'2', u'sku0', 1),
                     (u'3', u'sku0', 3),
                     (u'3', u'sku1', 3)]
-
         self.assertEqual(result, expected)
-

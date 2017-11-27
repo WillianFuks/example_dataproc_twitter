@@ -35,14 +35,13 @@ import pyspark
 import pyspark.sql.types as stypes
 import dataproc.jobs.base as base_job
 from pyspark.sql import Row
-from base import BaseTest
+from base_fixture import BaseTest
 
 
 class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
     @staticmethod
     def get_target_klass():
         return base_job.JobsBase
-
 
     def test_process_base_sysargs(self):
         klass = self.get_target_klass()()
@@ -63,7 +62,6 @@ class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
         self.assertEqual(result.w_browse, 0.5)
         self.assertEqual(result.w_basket, 2.)
         self.assertEqual(result.w_purchase, 6.)
-
     
     def test_load_users_schema(self):
         klass = self.get_target_klass()()
@@ -75,7 +73,6 @@ class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
         	    stypes.FloatType())])))])
         result = klass.load_users_schema()
         self.assertEqual(result, expected)
-
    
     @mock.patch('dataproc.jobs.base.datetime') 
     def test_get_formatted_date(self, dt_mock):
@@ -85,7 +82,6 @@ class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
         result = klass.get_formatted_date(1)
         expected = "2017-10-09"
         self.assertEqual(result, expected)
-         
 
     def test_aggregate_skus(self):
         klass = self.get_target_klass()()
@@ -94,7 +90,6 @@ class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
         result = list(klass.aggregate_skus(row))[0]
         self.assertEqual(expected[0], result[0])
         self.assertEqual(expected[1], sorted(result[1], key=lambda x: x[0]))
-   
 
     def test_load_neighbor_schema(self):
         klass = self.get_target_klass()()
@@ -107,18 +102,15 @@ class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
                     stypes.StructField("similarity", stypes.FloatType())])))])
         self.assertEqual(expected, result)
 
-
 class TestSystemBaseDataprocJob(BaseTest):
     _base_path = "tests/system/data/dataproc/jobs/train/{}/"
     @staticmethod
     def get_target_klass():
         return base_job.JobsBase
 
-
     @classmethod
     def setup_class(cls):
         cls.build_data(cls._base_path) 
-
 
     def teardown_class(cls):
         inter_path = "tests/system/data/dataproc/jobs/inter/"
@@ -126,7 +118,6 @@ class TestSystemBaseDataprocJob(BaseTest):
             shutil.rmtree(inter_path)
         assert(os.path.isdir(inter_path) == False)
         cls.delete_data(cls._base_path) 
-
 
     def test_transform_data_force_no(self, spark_context):
         klass = self.get_target_klass()()
@@ -152,7 +143,6 @@ class TestSystemBaseDataprocJob(BaseTest):
             for row in result:
                 assert(expected[str(i)][row['user']] ==
                     sorted(row['interactions'], key=lambda x: x['item']))
-
 
     def test_transform_data_force_yes(self, spark_context):
         klass = self.get_target_klass()()
@@ -182,7 +172,6 @@ class TestSystemBaseDataprocJob(BaseTest):
             for row in result:
                 assert(expected[str(i)][row['user']] == 
                     sorted(row['interactions'], key=lambda x: x['item']))
-
 
     def test_save_neighbor_matrix(self, spark_context):
         klass = self.get_target_klass()()

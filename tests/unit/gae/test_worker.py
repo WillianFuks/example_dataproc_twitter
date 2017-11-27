@@ -35,8 +35,6 @@ class TestWorkerBase(object):
     _source_config = 'tests/unit/data/gae/test_config.json'            
     _dest_config = 'gae/config.py'                                     
     _remove_config_flag = False                                                 
-
-                                                                                
     @classmethod                                                                
     def load_worker_setup(cls):                                                 
         try:                                                                    
@@ -49,7 +47,6 @@ class TestWorkerBase(object):
         from gae import utils                                          
         cls.utils = utils                                                       
         cls.worker = worker                                                     
-                                                                                
 
     @classmethod                                                                
     def clean_config(cls):                                                      
@@ -63,17 +60,14 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
         cls.load_worker_setup()                                                 
         cls._test_app = webtest.TestApp(cls.worker.app)                         
                                                                                 
-                                                                                
     @classmethod                                                                
     def teardown_class(cls):                                                    
         cls.clean_config()                                                      
-                                                                                
                                                                                 
     @classmethod                                                                
     def load_mock_config(cls):                                                  
         return json.loads(open(cls._source_config).read().replace(              
             "config = ", ""))  
-
 
     @mock.patch('gae.worker.request')                                  
     @mock.patch('gae.utils.uuid')                                      
@@ -103,7 +97,6 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
             extract_job_body])                                                  
         self.assertEqual(response.status_int, 200)                              
 
-
     @mock.patch('gae.worker.request')                                  
     @mock.patch('gae.utils.uuid')                                      
     @mock.patch('gae.worker.gcp_service')
@@ -125,14 +118,12 @@ class TestWorkerService(unittest.TestCase, TestWorkerBase):
         job_mock = mock.Mock()                                                  
         service_mock.bigquery.execute_job.return_value = 'job' 
         response = self._test_app.post("/export_customers")   
-
                                                                                     
         service_mock.bigquery.execute_job.assert_any_call(*['project123',
             query_job_body])        
         service_mock.bigquery.execute_job.assert_any_call(*['project123',
             extract_job_body])                                                  
         self.assertEqual(response.status_int, 200)                      
-
 
     @mock.patch('gae.worker.scheduler')
     @mock.patch('gae.worker.request')                                  

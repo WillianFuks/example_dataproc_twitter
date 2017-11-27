@@ -50,6 +50,9 @@ config = {"jobs":{
                   "job_name": "job_name"
               }
           },
+          "recos": {
+              "kind": "test_kind"
+          },
           "general":{
               "project_id": "project123"
           }

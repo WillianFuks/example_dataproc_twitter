@@ -21,28 +21,30 @@
 #SOFTWARE.
 
 
-from scheduler import SchedulerJob
+import unittest
+import mock
 
 
-class JobsFactory(object):
-    """Builds the specified job for GAE."""
-    scheduler = SchedulerJob 
-    def factor_job(self, job_name):
-        """Selects one of the available jobs.
+class TestDatastoreService(unittest.TestCase):
+    @staticmethod
+    def _get_target_klass():
+        from gae.connector.datastore import DatastoreService
 
-        :type job_name: str
-        :param job_name: name of job to build.
-        """
-        if job_name in self.available_jobs:
-            return self.scheduler 
-        else:
-            raise TypeError("Please choose a valid job name")
 
-    @property
-    def available_jobs(self):
-        """Jobs currently defined to be used in GAE.
+        return DatastoreService
 
-        :rtype: set
-        :returns: set with available jobs that can be used in GAE.    
-        """
-        return set(['export_customers_from_bq', 'run_dimsum'])
+    @mock.patch("gae.connector.datastore.ds")
+    def test_cto(self, ds_mock):
+        ds_mock.Client.return_value = 'client'
+        klass = self._get_target_klass()('credentials')
+        self.assertEqual(klass.client, 'client')
+        ds_mock.Client.assert_called_once_with(credentials='credentials')
+
+        klass = self._get_target_klass()(None)
+        self.assertEqual(klass.client, 'client')
+
+    @mock.patch("gae.connector.datastore.ds")
+    def test_get_keys(self, ds_mock):
+        client_mock = mock.Mock
+        ds_mock.Client.return_value = client_mock
+        klass = self._get_target_klass()(None)

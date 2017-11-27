@@ -45,8 +45,11 @@ class GCPService(BigQueryService,
     def __init__(self, credentials=None):
         """Builds a connector to interact with Google Cloud tools.
 
-        :type credentials: `google.auth.credentials.Credentials`
-        :param credentials: certificates to connect to GCP.
+        :type credentials: `google.auth.credentials.Credentials` or
+                            str
+        :param credentials: certificates to connect to GCP, can be either
+                            a Credentials class or a path to the json key
+                            file.
 
         :raises: TypeError if credentials is not of type
                  google.auth.credentials
@@ -63,20 +66,17 @@ class GCPService(BigQueryService,
         #self._credentials = (service_account.Credentials.\
         #    from_service_account_file('./key.json'))            
 
-
     @property
     def bigquery(self):
         if not self._bigquery:
             self._bigquery = BigQueryService(self._credentials) 
         return self._bigquery
 
-
     @property
     def dataproc(self):
         if not self._dataproc:
             self._dataproc = DataprocService(self._credentials)
         return self._dataproc
-
 
     @property
     def storage(self):

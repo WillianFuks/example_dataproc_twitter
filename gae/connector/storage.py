@@ -39,7 +39,6 @@ class StorageService(object):
     def __init__(self, credentials):
         self.con = disco.build('storage', 'v1', credentials=credentials)
 
-
     def upload_from_filenames(self, **kwargs):
         """Walks through a list of filenames and send them to specified bucket.
 
@@ -63,4 +62,3 @@ class StorageService(object):
                     body=body,
                     media_body=googleapiclient.http.MediaIoBaseUpload(f,
                         'application/octet-stream')).execute(num_retries=3)
-

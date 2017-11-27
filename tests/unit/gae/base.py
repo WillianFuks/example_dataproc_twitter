@@ -21,34 +21,37 @@
 #SOFTWARE.
 
 
+import json
+import unittest
+import mock
 import datetime
 import os
 import shutil
 
 
-class BaseTest(object):
-    @classmethod
-    def get_paths(cls, path, s):
-        for i in range(1, s):
-            source_path = path.format(i)
-            date_str = (datetime.datetime.now() 
-                        + datetime.timedelta(days=-i)).strftime("%Y-%m-%d")
-            dest_path = path.format(date_str)  
-            yield [source_path, dest_path]
- 
+class BaseTests(object):
+    config1_path = 'gae/config.py'
+    config2_path = 'gae/config2.py'
+    test_config = 'tests/unit/data/gae/test_config.json'
+    _recover_flg = False
+    _utils = None
+    def prepare_environ(self):
+        if os.path.isfile(self.config1_path):
+            shutil.copyfile(self.config1_path, self.config2_path)
+            self._recover_flg = True
+            os.remove(self.config1_path)
+        shutil.copyfile(self.test_config, self.config1_path)
 
-    @classmethod
-    def build_data(cls, path):
-        for source_path, dest_path in cls.get_paths(path, 3):
-            if not os.path.exists(dest_path):
-                os.makedirs(dest_path)
-                shutil.copyfile(source_path + 'result.gz',
-                    dest_path + 'result.gz')
-
-  
-    @classmethod 
-    def delete_data(cls, path):
-        for _, dest in cls.get_paths(path, 3):
-            dir_ = os.path.dirname(dest)
-            if os.path.isdir(dir_):
-                shutil.rmtree(dir_)
+    def clean_environ(self):
+        if self._recover_flg:
+            shutil.copyfile(self.config2_path, self.config1_path)
+            os.remove(self.config2_path)
+        else:
+            os.remove(self.config1_path)
+    
+    @property
+    def utils(self):
+        if not self._utils:
+            import gae.utils as utils
+            self._utils = utils
+        return self._utils

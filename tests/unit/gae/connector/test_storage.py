@@ -34,7 +34,6 @@ class TestStorageService(unittest.TestCase):
     def _make_credentials():
         return mock.Mock(spec=google.auth.credentials.Credentials)
 
-
     @staticmethod
     def _get_target_klass():
         from gae.connector.gcp import StorageService
@@ -42,13 +41,11 @@ class TestStorageService(unittest.TestCase):
 
         return StorageService
 
-
     @property
     def config_(self):
         _source_config = 'tests/unit/data/gae/test_config.json' 
         return json.loads(open(_source_config).read().replace( 
             "config = ", ""))
-
 
     @mock.patch('gae.connector.storage.disco')
     def test_cto(self, disco_mock):
@@ -58,7 +55,6 @@ class TestStorageService(unittest.TestCase):
         self.assertEqual(klass.con, 'con')
         disco_mock.build.assert_called_once_with('storage', 'v1',
             credentials=mock_cre)
-
  
     @mock.patch('gae.connector.storage.open')
     @mock.patch('gae.connector.storage.googleapiclient.http.MediaIoBaseUpload')
@@ -96,5 +92,3 @@ class TestStorageService(unittest.TestCase):
             bucket='bucket_name', media_body='media_body') 
 
         media_mock.assert_any_call('file', 'application/octet-stream')      
-
-        

@@ -21,28 +21,32 @@
 #SOFTWARE.
 
 
-from scheduler import SchedulerJob
+import datetime
+import os
+import shutil
 
 
-class JobsFactory(object):
-    """Builds the specified job for GAE."""
-    scheduler = SchedulerJob 
-    def factor_job(self, job_name):
-        """Selects one of the available jobs.
+class BaseTest(object):
+    @classmethod
+    def get_paths(cls, path, s):
+        for i in range(1, s):
+            source_path = path.format(i)
+            date_str = (datetime.datetime.now() 
+                        + datetime.timedelta(days=-i)).strftime("%Y-%m-%d")
+            dest_path = path.format(date_str)  
+            yield [source_path, dest_path]
+ 
+    @classmethod
+    def build_data(cls, path):
+        for source_path, dest_path in cls.get_paths(path, 3):
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
+                shutil.copyfile(source_path + 'result.gz',
+                    dest_path + 'result.gz')
 
-        :type job_name: str
-        :param job_name: name of job to build.
-        """
-        if job_name in self.available_jobs:
-            return self.scheduler 
-        else:
-            raise TypeError("Please choose a valid job name")
-
-    @property
-    def available_jobs(self):
-        """Jobs currently defined to be used in GAE.
-
-        :rtype: set
-        :returns: set with available jobs that can be used in GAE.    
-        """
-        return set(['export_customers_from_bq', 'run_dimsum'])
+    @classmethod 
+    def delete_data(cls, path):
+        for _, dest in cls.get_paths(path, 3):
+            dir_ = os.path.dirname(dest)
+            if os.path.isdir(dir_):
+                shutil.rmtree(dir_)
