@@ -112,14 +112,18 @@ class DataprocService(object):
             ListOperationsResponse#Operation)
         """
         mapping = itemgetter(1, 3)
+        print "VALUE OF JOB IS", job
         while True:
             (project_id, region) = mapping(job['name'].split('/'))
             cluster_name = job['metadata']["clusterName"]
+            print "VALUE OF CLUSTER NAME IS", cluster_name
             cluster_status = self.get_cluster(cluster_name, project_id, region)
-            if cluster_status['status']['state'] == 'ERROR':
+            print "CLUSTER STATUS IS", cluster_status
+            state = cluster_status.get('status', {}).get('state')
+            if state == 'ERROR': 
                 raise Exception(result['status']['details'])
-            if cluster_status['status']['state'] == 'DONE':
-                    return cluster_status 
+            elif state is None or state == "RUNNING":
+                return cluster_status
             # as cluster operations takes longer then we wait more as well
             time.sleep(60)
 

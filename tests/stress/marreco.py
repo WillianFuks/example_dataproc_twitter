@@ -1,0 +1,87 @@
+#MIT License
+#
+#Copyright (c) 2017 Willian Fuks
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
+
+import os
+import re
+import gzip
+import datetime
+import google.cloud.storage as st
+
+from locust import HttpLocust, TaskSet, task
+from config import config
+
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/key.json'
+sc = st.Client()
+
+
+class MarrecoUsers(object):
+    users_inters = None
+    _allowed_blobs = []
+    def load_users_interactions(self):
+        bucket = sc.bucket(config['bucket'])
+        blobs = list(bucket.list_blobs(prefix=config['gcs_prefix']))
+        print blobs
+        self.build_data(bucket, blobs)
+        
+    def build_data(self, bucket, blobs_list):
+        print "ALLOWED BLOBS", self.allowed_blobs
+        print "URL", self.allowed_blobs[0] + ".*gz"
+        for url in self.allowed_blobs:
+            print url
+            buffer_ = gzip.io.BytesIO()   
+            blob = [blob for blob in blobs_list if re.match(
+                url + ".*gz", blob.name)][0]
+            print "value of blob", blob
+            blob.download_to_file(buffer_)
+            with gzip.GzipFile(fileobj=buffer_, mode='rb') as f:
+                self.users_inters += [[r['item'] for r in json.loads(
+                    e.strip())['interactions']] for e in f.readlines()]
+                raw_input(users_inters)
+        
+    @property
+    def allowed_blobs(self):
+        if not self._allowed_blobs:
+            today = datetime.datetime.now()
+            for i in range(1, config['days_of_data'] + 1):
+                self._allowed_blobs.append(config['gcs_prefix'] +
+                    (today - datetime.timedelta(days=i)).strftime("%Y-%m-%d") +
+                    '/')
+        return self._allowed_blobs
+
+
+#class MissionSet(TaskSet):
+#    @task
+#    def target(self):
+#        self.client.get("/make_recommendation")
+#
+#
+#class Swarm(HttpLocust):
+#    """Main Locust class to build the swarm that will stress the server."""
+#    host = "http://localhost:8080"
+#    min_wait = 100
+#    max_wait = 1500    
+#    task_set = MissionSet
+
+m = MarrecoUsers()
+m.load_users_interactions()
