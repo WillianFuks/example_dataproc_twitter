@@ -27,6 +27,7 @@ import heapq
 import datetime
 import uuid
 from collections import Counter
+import time
 
 from google.appengine.ext import ndb
 from config import config
@@ -241,8 +242,11 @@ def process_recommendations(entities, scores, n=10):
     :rtype: list
     :returns: list with top skus to recommend.
     """
+    t0 = time.time()
     r = sum([Counter({e.items[i]: e.scores[i] * scores[e.key.id()]
         for i in range(len(e.items))}) for e in entities], Counter()).items()
+    time_build_recos = time.time() - t0
+    t0 = time.time()
     heapq.heapify(r)
     return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
-        n, r, key= lambda x: x[1])]}
+        n, r, key= lambda x: x[1])], 'statistics2': {'time_build_recos': time_build_recos, 'time_sort_recos': time.time() - t0}}

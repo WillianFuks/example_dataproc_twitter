@@ -25,6 +25,8 @@ import os
 import re
 import gzip
 import datetime
+import json
+import random
 import google.cloud.storage as st
 
 from locust import HttpLocust, TaskSet, task
@@ -36,29 +38,34 @@ sc = st.Client()
 
 
 class MarrecoUsers(object):
-    users_inters = None
+    users_inters = []
     _allowed_blobs = []
+    total_users = 9
     def load_users_interactions(self):
         bucket = sc.bucket(config['bucket'])
         blobs = list(bucket.list_blobs(prefix=config['gcs_prefix']))
-        print blobs
+        #blobs = []
         self.build_data(bucket, blobs)
-        
+ 
+    def build_url_reco(self):
+        idx = random.randint(0, self.total_users - 1) 
+        recos = ','.join(self.users_inters[idx])
+        return ("/make_recommendation?"
+            "browsed={x}&basket={x}&purchased={x}".format(x=recos))
+ 
     def build_data(self, bucket, blobs_list):
-        print "ALLOWED BLOBS", self.allowed_blobs
-        print "URL", self.allowed_blobs[0] + ".*gz"
+ #       self.users_inters = [[u'NI288SCF02XRL'], [u'MA041SCM31HTK'], [u'TI572SCF35WOU', u'TI572SCF05GQC', u'TI572SCF56JMX', u'TI572SCF37WOS', u'TI572SCF54DHX'], [u'HD124SHM55HVK'], [u'AD464SCM53KZI'], [u'NE184SCF14ZRT'], [u'CA278SHF03VKY', u'CA278SHF07VKU', u'CA278SHF15WDS', u'CA278SHF07CEA', u'CA278SHF06WEB', u'CA278SHF14WDT', u'CA278SHF08VKT', u'CA278SHF84CEX', u'CA278SHF04WED', u'CA278SHF06VKV', u'CA278SHF71CFK', u'CA278SHF82CEZ', u'CA278SHF04VKX'], [u'MO219SHM93GFU'], [u'TU798ACM29ZCW', u'SK554ACM40PIT', u'SP797SAM65LNI', u'SK554ACM23EAE', u'SK554ACM58LIJ']]
+
         for url in self.allowed_blobs:
-            print url
             buffer_ = gzip.io.BytesIO()   
             blob = [blob for blob in blobs_list if re.match(
                 url + ".*gz", blob.name)][0]
-            print "value of blob", blob
             blob.download_to_file(buffer_)
+            buffer_.seek(0)
             with gzip.GzipFile(fileobj=buffer_, mode='rb') as f:
                 self.users_inters += [[r['item'] for r in json.loads(
                     e.strip())['interactions']] for e in f.readlines()]
-                raw_input(users_inters)
-        
+
     @property
     def allowed_blobs(self):
         if not self._allowed_blobs:
@@ -70,18 +77,21 @@ class MarrecoUsers(object):
         return self._allowed_blobs
 
 
-#class MissionSet(TaskSet):
-#    @task
-#    def target(self):
-#        self.client.get("/make_recommendation")
-#
-#
-#class Swarm(HttpLocust):
-#    """Main Locust class to build the swarm that will stress the server."""
-#    host = "http://localhost:8080"
-#    min_wait = 100
-#    max_wait = 1500    
-#    task_set = MissionSet
-
 m = MarrecoUsers()
 m.load_users_interactions()
+
+
+class MissionSet(TaskSet):
+    build_url = m.build_url_reco
+    @task
+    def target(self):
+        #self.client.get("/make_recommendation")
+        self.client.get(self.build_url(), name="/make_recommendation")
+
+
+class Swarm(HttpLocust):
+    """Main Locust class to build the swarm that will stress the server."""
+    host = "http://localhost:8080"
+    min_wait = 1
+    max_wait = 1500
+    task_set = MissionSet

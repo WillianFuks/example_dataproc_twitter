@@ -59,20 +59,17 @@ def dataproc_dimsum():
     the processing is over (this method waits until job is complete) then
     schedules a new call to prepare Datastore with the resulting similarity
     matrix we obtain from the algorithm."""
-    try:
-        extended_args = request.form.get('extended_args').split(',')
-        setup = config['jobs']['run_dimsum']
-        job = gcp_service.dataproc.build_cluster(**setup)
-        gcp_service.storage.upload_from_filenames(
-            **config['jobs']['run_dimsum']['pyspark_job'])
-        job = gcp_service.dataproc.submit_pyspark_job(extended_args,
-             **config['jobs']['run_dimsum'])
-        result = gcp_service.dataproc.delete_cluster(**setup)
-        #scheduler.run({'url': '/prepare_datastore',
-        #               'target': config['jobs']['dataflow_export'][
-        #                            'dataflow_service']})
-    except Exception as err:
-        print str(err)
+    extended_args = request.form.get('extended_args').split(',')
+    setup = config['jobs']['run_dimsum']
+    job = gcp_service.dataproc.build_cluster(**setup)
+    gcp_service.storage.upload_from_filenames(
+        **config['jobs']['run_dimsum']['pyspark_job'])
+    job = gcp_service.dataproc.submit_pyspark_job(extended_args,
+         **config['jobs']['run_dimsum'])
+    result = gcp_service.dataproc.delete_cluster(**setup)
+    scheduler.run({'url': '/prepare_datastore',
+                   'target': config['jobs']['dataflow_export'][
+                                'dataflow_service']})
     return "finished"
 
 

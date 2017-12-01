@@ -36,3 +36,5 @@ handlers:
 libraries:
 - name: flask
   version: "0.12"
+
+instance_class: F1
