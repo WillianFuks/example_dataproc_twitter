@@ -33,7 +33,7 @@ def session_unit_gae(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'unit-gae'
 
-    session.install('-r', 'tests/unit/gae/test_requirements.txt')
+    session.install('-r', 'tests/unit/data/gae/test_requirements.txt')
     session.install('pytest', 'pytest-cov', 'mock')
 
     if not os.path.isdir('/google-cloud-sdk/platform/google_appengine/'):
@@ -63,7 +63,7 @@ def session_system_gae(session):
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'system-gae'
 
-    session.install('-r', 'gae/exporter/requirements.txt')
+    session.install('-r', 'gae/standard_requirements.txt')
     session.install('google-cloud-bigquery==0.27.0')
 
     session.install('pytest', 'pytest-cov', 'mock')

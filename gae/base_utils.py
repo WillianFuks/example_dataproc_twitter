@@ -29,12 +29,19 @@ flexible environment."""
 import heapq
 from collections import Counter
 import time
+import os
 
-import cythonized.c_funcs as c_funcs
 
+try:
+    import cythonized.c_funcs as c_funcs
+except:
+    # this is done so we can use this module both in standard and flexible
+    # environment (as in standard the sandboxed environment will remove 
+    # the cython modules from sys.path
+    if not os.path.isdir(os.path.join(__file__, "cythonized")):
+        raise ImportError("Module cythonized not found")
 
 SCORES = {'browsed': 0.5, 'basket': 2., 'purchased': 6.}
-
 
 def process_input_items(args):
     """Process input items to prepare for recommendation.

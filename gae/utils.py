@@ -23,18 +23,15 @@
 
 """General functions to be used throught the exporter modules"""
 
+
 import heapq
 import datetime
 import uuid
 from collections import Counter
 import time
 
-import cythonized.c_funcs as c_funcs
 from google.appengine.ext import ndb
 from config import config
-
-
-SCORES = {'browsed': 0.5, 'basket': 2., 'purchased': 6.}
 
 
 def get_yesterday_date():
@@ -192,30 +189,6 @@ def process_url_date(date):
             raise
     return date
 
-def process_input_items(args):
-    """Process input items to prepare for recommendation.
-
-    :type args: dict
-    :param args:
-      :type args.browsed: str 
-      :param args.browsed: str of items that were navigated by current
-                           customer in a format like sku0,sku1,sku2.
-
-      :type args.basket: str 
-      :param args.basket: str of items comma separated corresponding to
-                          products added to basket.
-
-      :type args.purchased: str
-      :param args.purchased: str of items comma separated corresponding to
-                             products purchased.
-
-    :rtype: dict
-    :returns: dict of each item and total score interaction.  
-    """
-    return sum([Counter({sku: value * SCORES[k] for sku, value in
-        Counter(args[k].split(',')).items()}) or Counter() for k in
-        set(SCORES.keys()) & set(args.keys())], Counter())
-
 class SkuModel(ndb.Model):
     @classmethod
     def _get_kind(cls):
@@ -250,33 +223,4 @@ def process_recommendations(entities, scores, n=10):
     t0 = time.time()
     heapq.heapify(r)
     return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
-        n, r, key= lambda x: x[1])], 'statistics2': {'time_build_recos': time_build_recos, 'time_sort_recos': time.time() - t0}}
-
-def cy_process_recommendations(entities, scores, n=10):
-    """Uses the Cython implementation to aggregate results and then we use this
-    method to sort top n recommendations. This is necessary to improve
-    considerably performance to retrive top n results.
-
-    
-    :type entities: list of dicts. 
-    :param entities: list with entities information retrieved as a dict
-                     following the format [{"id": "sku0",
-                     "items": ["sku0", "sku1"], "scores": [0.1, 0.2]}]
-
-    :type scores: dict
-    :param scores: each key corresponds to a sku and the value is the score
-                   we observed our customer had with given sku, such as
-                   {'sku0': 2.5}.
-
-    :type n: int
-    :param n: returns ``n`` largest scores from list of recommendations.
-
-    :rtype: list
-    :returns: list with top skus to recommend.
-    """
-    r = c_funcs.cy_aggregate_scores(entitie, scores, n)
-    heapq.heapify(r)
-    return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
         n, r, key= lambda x: x[1])]}
-
- 

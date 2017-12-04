@@ -180,32 +180,6 @@ class TestUtils(unittest.TestCase, BaseTests):
                        {'item': 'sku1', 'score': 0.45}]}
         self.assertTrue(expected, result)
 
-    def test_process_input_items(self):
-        inp = {'browsed': 'sku0'}
-        result = self.utils.process_input_items(inp)
-        self.assertEqual(result, Counter({'sku0': 0.5}))
-
-        inp = {'basket': 'sku0'}
-        result = self.utils.process_input_items(inp)
-        self.assertEqual(result, Counter({'sku0': 2}))
-
-        inp = {'purchased': 'sku0'}
-        result = self.utils.process_input_items(inp)
-        self.assertEqual(result, Counter({'sku0': 6}))
-
-        inp = {'purchased': 'sku0', 'browsed': 'sku0,sku1'}
-        result = self.utils.process_input_items(inp)
-        self.assertEqual(result, Counter({'sku0': 6.5, 'sku1': 0.5}))
-
-        inp = {'purchased': 'sku0', 'browsed': 'sku0,sku1',
-            'basket': 'sku0,sku2'}
-        result = self.utils.process_input_items(inp)
-        self.assertEqual(result, Counter(
-            {'sku0': 8.5, 'sku2': 2.0, 'sku1': 0.5}))
-
-        inp = {}
-        result = self.utils.process_input_items(inp)
-        self.assertEqual(result, Counter())
 
 
 class TestSkuModel(unittest.TestCase, BaseTests):

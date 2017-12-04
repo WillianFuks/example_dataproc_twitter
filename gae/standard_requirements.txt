@@ -1,5 +1,5 @@
 flask
-six
+six==1.10.0
 pyasn1
 pyasn1_modules
 google-auth

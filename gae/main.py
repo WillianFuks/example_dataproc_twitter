@@ -26,6 +26,7 @@ making recommendations."""
 
 
 import utils
+import base_utils
 from config import config
 from flask import Flask, request, jsonify
 from factory import JobsFactory
@@ -55,25 +56,17 @@ def make_reco():
     items a given customer interacted with such as browsed items, added to 
     basket and purchased ones. Returns a list of top selected recommendations.
     """
-    try:
-        t0 = time.time()
-        scores = utils.process_input_items(request.args)
-        keys = map(lambda x: ndb.Key(config['recos']['kind'], x),
-            scores.keys())
-        entities = [e for e in ndb.get_multi(keys) if e]
-        if not entities:
-            result = {'results': [], 'elapsed_time': time.time() - t0}
-            return jsonify(result)
-        time_get_entities = time.time() - t0
-        t00 = time.time()
-        results = utils.process_recommendations(entities, scores,
-            int(request.args.get('n', 10))) 
-        time_process_recos = time.time() - t00
-        total_time = time.time() - t0    
-        results['statistics'] = {}
-        results['statistics']['elapsed_time'] = total_time
-        results['statistics']['time_get_entities'] = time_get_entities
-        results['statistics']['time_process_recos'] = time_process_recos
-        return jsonify(results) 
-    except Exception as err:
-        return str(err)
+    t0 = time.time()
+    scores = base_utils.process_input_items(request.args)
+    keys = map(lambda x: ndb.Key(config['recos']['kind'], x),
+        scores.keys())
+    entities = [e for e in ndb.get_multi(keys) if e]
+    if not entities:
+        result = {'results': [], 'statistics':
+            {'elapsed_time': time.time() - t0}}
+        return jsonify(result)
+    results = utils.process_recommendations(entities, scores,
+        int(request.args.get('n', 10))) 
+    results['statistics'] = {}
+    results['statistics']['elapsed_time'] = time.time() - t0 
+    return jsonify(results) 

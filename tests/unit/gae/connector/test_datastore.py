@@ -20,41 +20,46 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-import re
+
 import unittest
-
-from google.cloud.bigquery import Client
-
-
-bc = Client()
+import mock
 
 
-class TestQueriesResults(unittest.TestCase):
-    def test_queries(self):
-        query = open(
-            "gae/queries/customers_interactions.sql").read().strip()
-        simulated_data = open(
-            "tests/system/data/gae/test_query_customers.sql").read().strip()
-        query = re.sub(r"`.*`", simulated_data, query)
-        pattern = r"WHERE TRUE\n"
-        query = re.sub(pattern, pattern + '#', query)
+class TestDatastoreService(unittest.TestCase):
+    @staticmethod
+    def _get_target_klass():
+        from gae.connector.datastore import DatastoreService
 
-        job = bc.run_sync_query(query)
-        job.use_legacy_sql = False
 
-        job.run()
+        return DatastoreService
 
-        # orders by user_id and then by sku
-        result = sorted(list(job.fetch_data()), key=lambda x: (x[0], x[1]))
-        
-        expected = [(u'1', u'sku0', 1),
-                    (u'1', u'sku0', 2),
-                    (u'1', u'sku0', 3),
-                    (u'1', u'sku1', 1),
-                    (u'1', u'sku3', 1),
-                    (u'2', u'sku0', 1),
-                    (u'3', u'sku0', 3),
-                    (u'3', u'sku1', 3)]
+    @mock.patch("gae.connector.datastore.ds")
+    def test_cto(self, ds_mock):
+        ds_mock.Client.return_value = 'client'
+        klass = self._get_target_klass()('credentials')
+        self.assertEqual(klass.client, 'client')
+        ds_mock.Client.assert_called_once_with(credentials='credentials')
 
-        self.assertEqual(result, expected)
+        klass = self._get_target_klass()(None)
+        self.assertEqual(klass.client, 'client')
+
+    @mock.patch("gae.connector.datastore.ds")
+    def test_get_keys(self, ds_mock):
+        client_mock = mock.Mock
+        ds_mock.Client.return_value = client_mock
+        klass = self._get_target_klass()(None)
+                                
+
+
+
+
+
+
+
+
+
+
+
+
+
 

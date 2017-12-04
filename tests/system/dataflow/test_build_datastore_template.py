@@ -47,6 +47,7 @@ class TestExportDatastore(unittest.TestCase):
         keys = map(lambda x: dsc.key(kind, x), ['sku0', 'sku1', 'sku2'])
 
         exporter.main()
+ 
         ds_keys = dsc.get_multi(keys)
         for key in ds_keys:
             name = key.key.name

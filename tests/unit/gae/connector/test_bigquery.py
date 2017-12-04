@@ -36,7 +36,7 @@ class TestBigqueryService(unittest.TestCase):
 
     @staticmethod
     def _get_target_klass():
-        from gae.connector.gcp import BigQueryService
+        from gae.connector.bigquery import BigQueryService
 
 
         return BigQueryService
