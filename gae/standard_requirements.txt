@@ -7,5 +7,3 @@ google-api-python-client
 google-auth-httplib2
 pyyaml
 WebTest
-google-cloud-datastore
-gunicorn

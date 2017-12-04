@@ -21,8 +21,35 @@
 #SOFTWARE.
 
 
-from bigquery import BigQueryService
-from dataproc import DataprocService
-from storage import StorageService
-from dataflow import DataflowService
-from datastore import DatastoreService
+"""Datastore Client. As this is supposed to be used in Flexible Environment,
+we'll be using the official google-cloud API."""
+
+
+import time
+import google.cloud.datastore as ds
+
+
+class DatastoreService(object):
+    """Class to interact with Datastore's backend using google-cloud API.
+
+    :type credentials: str 
+    :param credentials: path to file service_account.json secret key file. 
+    """
+    def __init__(self, credentials):
+        self.client = (ds.Client(credentials=credentials) if credentials
+            else ds.Client())
+
+    def get_keys(self, kind, keys):
+        """Retrieves list of keys from Datastore.
+    
+        :type kind: str
+        :param kind: kind to retrieve keys from DS.
+
+        :type keys: list
+        :param keys: list of key names to retrieve data from.
+
+        :rtype: list
+        :returns: list with resulting keys retrieved from DS. 
+    
+        """
+        return self.client.get_multi([self.client.key(kind, e) for e in keys])

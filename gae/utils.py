@@ -29,6 +29,7 @@ import uuid
 from collections import Counter
 import time
 
+import cythonized.c_funcs as c_funcs
 from google.appengine.ext import ndb
 from config import config
 
@@ -250,3 +251,32 @@ def process_recommendations(entities, scores, n=10):
     heapq.heapify(r)
     return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
         n, r, key= lambda x: x[1])], 'statistics2': {'time_build_recos': time_build_recos, 'time_sort_recos': time.time() - t0}}
+
+def cy_process_recommendations(entities, scores, n=10):
+    """Uses the Cython implementation to aggregate results and then we use this
+    method to sort top n recommendations. This is necessary to improve
+    considerably performance to retrive top n results.
+
+    
+    :type entities: list of dicts. 
+    :param entities: list with entities information retrieved as a dict
+                     following the format [{"id": "sku0",
+                     "items": ["sku0", "sku1"], "scores": [0.1, 0.2]}]
+
+    :type scores: dict
+    :param scores: each key corresponds to a sku and the value is the score
+                   we observed our customer had with given sku, such as
+                   {'sku0': 2.5}.
+
+    :type n: int
+    :param n: returns ``n`` largest scores from list of recommendations.
+
+    :rtype: list
+    :returns: list with top skus to recommend.
+    """
+    r = c_funcs.cy_aggregate_scores(entitie, scores, n)
+    heapq.heapify(r)
+    return {'result': [{"item": k, "score": v} for k, v in heapq.nlargest(
+        n, r, key= lambda x: x[1])]}
+
+ 

@@ -30,23 +30,28 @@ import google.auth.credentials
 import googleapiclient.discovery as disco
 from google.auth import app_engine
 from . import (BigQueryService, DataprocService, StorageService,
-    DataflowService)
+    DataflowService, DatastoreService)
 
 
 class GCPService(BigQueryService,
                  DataprocService,
                  StorageService,
-                 DataflowService):
+                 DataflowService,
+                 DatastoreService):
     _credentials = None
     _bigquery = None
     _dataproc = None
     _storage = None
     _dataflow = None
+    _datastore = None
     def __init__(self, credentials=None):
         """Builds a connector to interact with Google Cloud tools.
 
-        :type credentials: `google.auth.credentials.Credentials`
-        :param credentials: certificates to connect to GCP.
+        :type credentials: `google.auth.credentials.Credentials` or
+                            str
+        :param credentials: certificates to connect to GCP, can be either
+                            a Credentials class or a path to the json key
+                            file.
 
         :raises: TypeError if credentials is not of type
                  google.auth.credentials
@@ -86,3 +91,9 @@ class GCPService(BigQueryService,
         if not self._dataflow:
             self._dataflow = DataflowService(self._credentials)
         return self._dataflow
+
+    @property
+    def datastore(self):
+        if not self._datastore:
+            self._datastore = DatastoreService(self._credentials)
+        return self._datastore
