@@ -6,3 +6,6 @@ service: worker
 handlers:
 - url: /.*
   script: worker.app
+
+basic_scaling:
+  max_instances: 1

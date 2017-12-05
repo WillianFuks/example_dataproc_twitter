@@ -26,13 +26,14 @@ all correlations that there is between all products a given customer
 interacted. This leads to quadratic complexity times whose processing time
 is prohibitive for large amounts of data"""
 
+from __future__ import absolute_import
 
 import operator
 import math
 import random
 import time
 
-from .base import JobsBase
+from base import JobsBase
 from pyspark.sql import SparkSession
 from pyspark.sql import types as stypes
 

@@ -38,10 +38,8 @@ def export():
     """Runs a query against BigQuery and export results to a GCS bucket."""
     date = (None if request.form.get('date') == 'None' else
         utils.process_url_date(request.form.get('date')))
-
     query_job_body = utils.load_query_job_body(date,
         **config)
-
     job = gcp_service.bigquery.execute_job(config['general']['project_id'],
         query_job_body)
 

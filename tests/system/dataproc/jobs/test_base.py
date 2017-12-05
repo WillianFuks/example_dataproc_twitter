@@ -35,7 +35,7 @@ import pyspark
 import pyspark.sql.types as stypes
 import dataproc.jobs.base as base_job
 from pyspark.sql import Row
-from base import BaseTest
+from base_fixture import BaseTest
 
 
 class TestUnitBaseDataprocJob(unittest.TestCase, BaseTest):
