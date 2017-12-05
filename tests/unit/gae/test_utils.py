@@ -189,9 +189,11 @@ class TestSkuModel(unittest.TestCase, BaseTests):
     def tearDown(self):
         self.clean_environ()
 
-    def test_cto(self):
+    @mock.patch('gae.utils.config')
+    def test_cto(self, config_mock):
         items = ['sku0', 'sku1']
         scores = [0.9, 0.8]
+        config_mock.__getitem__.return_value = {"kind": "test_kind"} 
         sku = self.utils.SkuModel(items=items, scores=scores, id='sku0')
         self.assertEqual(sku.items, items)
         self.assertEqual(sku.scores, scores)

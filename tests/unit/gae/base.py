@@ -31,7 +31,7 @@ import shutil
 
 class BaseTests(object):
     config1_path = 'gae/config.py'
-    config2_path = 'gae/config2.py'            
+    config2_path = 'gae/config2.py'
     test_config = 'tests/unit/data/gae/test_config.json'
     _recover_flg = False
     _utils = None
@@ -39,7 +39,8 @@ class BaseTests(object):
         if os.path.isfile(self.config1_path):
             shutil.copyfile(self.config1_path, self.config2_path)
             self._recover_flg = True
-        shutil.copyfile(self.test_config, self.config1_path) 
+            os.remove(self.config1_path)
+        shutil.copyfile(self.test_config, self.config1_path)
 
     def clean_environ(self):
         if self._recover_flg:

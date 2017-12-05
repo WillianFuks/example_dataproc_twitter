@@ -21,7 +21,7 @@
 #SOFTWARE.
 
 
-"""General functions to be used throught the exporter modules"""
+"""General functions to be used throught the services modules"""
 
 
 import heapq
