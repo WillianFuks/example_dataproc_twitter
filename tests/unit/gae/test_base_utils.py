@@ -31,7 +31,6 @@ from collections import Counter
 import base_utils
 
 
-
 class TestBaseUtils(unittest.TestCase):
     def test_process_input_items(self):
         inp = {'browsed': 'sku0'}
@@ -59,7 +58,6 @@ class TestBaseUtils(unittest.TestCase):
         inp = {}
         result = base_utils.process_input_items(inp)
         self.assertEqual(result, Counter())
-
 
     def test_cy_process_recommendations(self):
         entities = [{"id": "sku0",

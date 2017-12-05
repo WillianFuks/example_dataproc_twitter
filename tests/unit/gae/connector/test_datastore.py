@@ -48,18 +48,3 @@ class TestDatastoreService(unittest.TestCase):
         client_mock = mock.Mock
         ds_mock.Client.return_value = client_mock
         klass = self._get_target_klass()(None)
-                                
-
-
-
-
-
-
-
-
-
-
-
-
-
-

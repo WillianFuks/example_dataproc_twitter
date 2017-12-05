@@ -55,6 +55,4 @@ class TestQueriesResults(unittest.TestCase):
                     (u'2', u'sku0', 1),
                     (u'3', u'sku0', 3),
                     (u'3', u'sku1', 3)]
-
         self.assertEqual(result, expected)
-

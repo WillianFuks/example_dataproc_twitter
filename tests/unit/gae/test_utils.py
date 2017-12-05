@@ -181,7 +181,6 @@ class TestUtils(unittest.TestCase, BaseTests):
         self.assertTrue(expected, result)
 
 
-
 class TestSkuModel(unittest.TestCase, BaseTests):
     def setUp(self):
         self.prepare_environ()    

@@ -36,7 +36,6 @@ class BaseTest(object):
             dest_path = path.format(date_str)  
             yield [source_path, dest_path]
  
-
     @classmethod
     def build_data(cls, path):
         for source_path, dest_path in cls.get_paths(path, 3):
@@ -45,7 +44,6 @@ class BaseTest(object):
                 shutil.copyfile(source_path + 'result.gz',
                     dest_path + 'result.gz')
 
-  
     @classmethod 
     def delete_data(cls, path):
         for _, dest in cls.get_paths(path, 3):

@@ -44,7 +44,6 @@ class MarrecoUsers(object):
     def load_users_interactions(self):
         bucket = sc.bucket(config['bucket'])
         blobs = list(bucket.list_blobs(prefix=config['gcs_prefix']))
-        #blobs = []
         self.build_data(bucket, blobs)
  
     def build_url_reco(self):
@@ -54,8 +53,6 @@ class MarrecoUsers(object):
             "browsed={x}&basket={x}&purchased={x}".format(x=recos))
  
     def build_data(self, bucket, blobs_list):
- #       self.users_inters = [[u'NI288SCF02XRL'], [u'MA041SCM31HTK'], [u'TI572SCF35WOU', u'TI572SCF05GQC', u'TI572SCF56JMX', u'TI572SCF37WOS', u'TI572SCF54DHX'], [u'HD124SHM55HVK'], [u'AD464SCM53KZI'], [u'NE184SCF14ZRT'], [u'CA278SHF03VKY', u'CA278SHF07VKU', u'CA278SHF15WDS', u'CA278SHF07CEA', u'CA278SHF06WEB', u'CA278SHF14WDT', u'CA278SHF08VKT', u'CA278SHF84CEX', u'CA278SHF04WED', u'CA278SHF06VKV', u'CA278SHF71CFK', u'CA278SHF82CEZ', u'CA278SHF04VKX'], [u'MO219SHM93GFU'], [u'TU798ACM29ZCW', u'SK554ACM40PIT', u'SP797SAM65LNI', u'SK554ACM23EAE', u'SK554ACM58LIJ']]
-
         for url in self.allowed_blobs:
             buffer_ = gzip.io.BytesIO()   
             blob = [blob for blob in blobs_list if re.match(

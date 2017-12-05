@@ -33,7 +33,6 @@ class TestGCPFactory(unittest.TestCase):
     def _make_credentials():
         return mock.Mock(spec=google.auth.credentials.Credentials)
 
-
     @staticmethod
     def _get_target_klass():
         from gae.connector.gcp import GCPService
@@ -41,25 +40,21 @@ class TestGCPFactory(unittest.TestCase):
 
         return GCPService
 
-
     @mock.patch('gae.connector.gcp.app_engine')
     def test_cto_no_credentials(self, app_mock):
         app_mock.Credentials.return_value = self._make_credentials() 
         klass = self._get_target_klass()() 
         self.assertTrue(isinstance(klass._credentials,
              google.auth.credentials.Credentials))
-            
 
     def test_cto_with_credentials(self):
         klass = self._get_target_klass()(self._make_credentials()) 
         self.assertTrue(isinstance(klass._credentials,
              google.auth.credentials.Credentials))
 
-
     def test_cto_with_invalid_credentials(self):
         with self.assertRaises(TypeError):
             klass = self._get_target_klass()('invalid credential') 
-
     
     @mock.patch('gae.connector.gcp.BigQueryService')
     def test_bigquery_property(self, bq_mock):
@@ -70,7 +65,6 @@ class TestGCPFactory(unittest.TestCase):
         self.assertEqual(con, 'con')
         self.assertTrue(klass.bigquery is not None)
 
-
     @mock.patch('gae.connector.gcp.DataprocService')
     def test_dataproc_property(self, dp_mock):
         dp_mock.return_value = 'con'
@@ -80,7 +74,6 @@ class TestGCPFactory(unittest.TestCase):
         self.assertEqual(con, 'con')
         self.assertTrue(klass.dataproc is not None)
 
-
     @mock.patch('gae.connector.gcp.StorageService')
     def test_storage_property(self, st_mock):
         st_mock.return_value = 'con'
@@ -89,7 +82,6 @@ class TestGCPFactory(unittest.TestCase):
         con = klass.storage
         self.assertEqual(con, 'con')
         self.assertTrue(klass.storage is not None)
-
 
     @mock.patch('gae.connector.gcp.DataflowService')
     def test_dataflow_property(self, df_mock):

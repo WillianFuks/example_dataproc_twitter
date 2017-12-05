@@ -116,7 +116,7 @@ def session_system_dataflow(session):
     """
     if not os.path.isfile('./dataflow/config.py'):
         raise RuntimeError(("Please make sure to build the config.py file ",
-                            "in dataproc/config.py. You can use the template "
+                            "in dataflow/config.py. You can use the template "
                             "as a guide."))
     session.interpreter = 'python2.7'
     session.virtualenv_dirname = 'system-dataflow'
