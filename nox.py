@@ -49,7 +49,7 @@ def session_unit_gae(session):
 
     session.run(
         'py.test',
-        'tests/unit/gae/',
+        'tests/unit/gae/test_recommender.py',
         '--cov=.',
         '--cov-config=.coveragerc',
         '--cov-report=html')

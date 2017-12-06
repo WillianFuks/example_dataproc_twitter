@@ -37,7 +37,7 @@ class DatastoreService(object):
     :type credentials: `google.oauth.credentials.Credentials` 
     :param credentials: credentials used to authenticate requests in GCP. 
     """
-    def __init__(self, credentials):
+    def __init__(self, credentials=None):
         self.client = (ds.Client(credentials=credentials) if credentials
             else ds.Client())
 
