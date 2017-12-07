@@ -20,8 +20,12 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-
-from bigquery import BigQueryService
-from dataproc import DataprocService
-from storage import StorageService
-from dataflow import DataflowService
+try:
+    from bigquery import BigQueryService
+    from dataproc import DataprocService
+    from storage import StorageService
+    from dataflow import DataflowService
+except ImportError:
+    # We do this so we don't have to install dependencies when using Flexible
+    # environment
+    pass

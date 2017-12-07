@@ -43,9 +43,11 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
 
     @mock.patch('gae.recommender.config')
     @mock.patch('gae.recommender.time')
-    @mock.patch('gae.recommender.Con.datastore')
+    @mock.patch('gae.recommender.Con.get_ds_client')
     def test_make_reco(self, ds_mock, time_mock, config_mock):
         config_mock.__getitem__.return_value = {"kind": "test"}
+        ds_keys_mock = mock.Mock()
+        ds_mock.return_value = ds_keys_mock
         class Entity(object):
             def __init__(self, id, items, scores):
                 self.items = items
@@ -61,7 +63,7 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
                     result['result'][i]['score'], 3)
 
         time_mock.time.side_effect = [0, 1]
-        ds_mock.get_keys.return_value = []
+        ds_keys_mock.get_keys.return_value = []
         response = self.test_app.get(
             '/make_recommendation?browsed=sku0,sku1').json
         expected = {'elapsed_time': 1, 'results': []}
@@ -70,7 +72,7 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
         time_mock.time.side_effect = [0, 1]
         e1 = Entity('sku0', ['sku1', 'sku2'], [0.6, 0.4])
         e2 = Entity('sku1', ['sku0', 'sku2'], [0.8, 0.1])
-        ds_mock.get_keys.return_value = [e1, e2]
+        ds_keys_mock.get_keys.return_value = [e1, e2]
         response = self.test_app.get(
             '/make_recommendation?browsed=sku0,sku1').json
         expected = {"elapsed_time": 1, "result": [
@@ -78,7 +80,7 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
                       {"item": "sku1", "score": 0.3}, 
                       {"item": "sku2", "score": 0.25}]}
         self.assertEqual(response, expected)
-        mock_call = list([e for e in ds_mock.get_keys.call_args][0])
+        mock_call = list([e for e in ds_keys_mock.get_keys.call_args][0])
         mock_call = [mock_call[0], sorted(mock_call[1])]
         self.assertEqual(['test', ['sku0', 'sku1']], mock_call) 
 
@@ -100,7 +102,7 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
         self.assertEqual(response, expected)
 
         time_mock.time.side_effect = [0, 1]
-        ds_mock.get_keys.return_value = [e1]
+        ds_keys_mock.get_keys.return_value = [e1]
         response = self.test_app.get('/make_recommendation?browsed=sku0').json
         expected = {'elapsed_time': 1, 'result': [
             {'item': 'sku1', 'score': 0.3}, {'item': 'sku2', 'score': 0.2}]}

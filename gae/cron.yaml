@@ -25,8 +25,8 @@ cron:
 - description: daily export job from BigQuery to Cloud Storage
   url: /run_job/export_customers_from_bq/?url=/export_customers&target=worker
   target: dataproc-twitter
-  schedule: every day 10:00
+  schedule: every day 01:05
 - description: Runs DIMSUM job in Dataproc 
   url: /run_job/run_dimsum/?url=/dataproc_dimsum&target=worker&extended_args=--days_init=30,--days_end=1,--threshold=0.1&force=no
   target: dataproc-twitter
-  schedule: every day 10:05
+  schedule: every day 01:15

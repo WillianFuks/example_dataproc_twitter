@@ -42,7 +42,7 @@ class Con(object):
     connection."""
     _datastore = None
     @classmethod
-    def datastore(cls):
+    def get_ds_client(cls):
         if not cls._datastore:
             cls._datastore = DatastoreService()
         return cls._datastore
@@ -58,7 +58,7 @@ def make_reco():
     weights = base_utils.process_input_items(request.args)
     entities = [{"id": e.key.name, "items": e.get('items'),
         "scores": e.get('scores')} for e in
-        Con.datastore.get_keys(config['recos']['kind'], 
+        Con.get_ds_client().get_keys(config['recos']['kind'], 
         weights.keys()) if e]
     if not entities:
         result = {'results': [], 'elapsed_time': time.time() - t0}
