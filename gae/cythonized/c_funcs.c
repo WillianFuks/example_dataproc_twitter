@@ -751,7 +751,7 @@ struct __pyx_opt_args_3gae_10cythonized_7c_funcs_cy_aggregate_scores;
 /* "gae/cythonized/c_funcs.pyx":4
  * 
  * 
- * cpdef cy_aggregate_scores(list inters, dict weights, int n=10):             # <<<<<<<<<<<<<<
+ * cpdef cy_aggregate_scores(list similarities, dict user_scores, int n=10):             # <<<<<<<<<<<<<<
  *     cdef int i
  *     cdef dict res
  */
@@ -1172,36 +1172,36 @@ static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_items[] = "items";
 static const char __pyx_k_range[] = "range";
-static const char __pyx_k_inters[] = "inters";
 static const char __pyx_k_scores[] = "scores";
-static const char __pyx_k_weights[] = "weights";
 static const char __pyx_k_setdefault[] = "setdefault";
+static const char __pyx_k_user_scores[] = "user_scores";
+static const char __pyx_k_similarities[] = "similarities";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_id;
-static PyObject *__pyx_n_s_inters;
 static PyObject *__pyx_n_s_items;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_n;
 static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_scores;
 static PyObject *__pyx_n_s_setdefault;
+static PyObject *__pyx_n_s_similarities;
 static PyObject *__pyx_n_s_test;
-static PyObject *__pyx_n_s_weights;
-static PyObject *__pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_inters, PyObject *__pyx_v_weights, int __pyx_v_n); /* proto */
+static PyObject *__pyx_n_s_user_scores;
+static PyObject *__pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_similarities, PyObject *__pyx_v_user_scores, int __pyx_v_n); /* proto */
 static __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_items = {0, &__pyx_n_s_items, 0, 0, 0};
 static PyObject *__pyx_float_0_0;
 
 /* "gae/cythonized/c_funcs.pyx":4
  * 
  * 
- * cpdef cy_aggregate_scores(list inters, dict weights, int n=10):             # <<<<<<<<<<<<<<
+ * cpdef cy_aggregate_scores(list similarities, dict user_scores, int n=10):             # <<<<<<<<<<<<<<
  *     cdef int i
  *     cdef dict res
  */
 
 static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject *__pyx_v_inters, PyObject *__pyx_v_weights, CYTHON_UNUSED int __pyx_skip_dispatch, struct __pyx_opt_args_3gae_10cythonized_7c_funcs_cy_aggregate_scores *__pyx_optional_args) {
+static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject *__pyx_v_similarities, PyObject *__pyx_v_user_scores, CYTHON_UNUSED int __pyx_skip_dispatch, struct __pyx_opt_args_3gae_10cythonized_7c_funcs_cy_aggregate_scores *__pyx_optional_args) {
   int __pyx_v_i;
   PyObject *__pyx_v_res = 0;
   int __pyx_v_j;
@@ -1230,8 +1230,8 @@ static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject
  *     cdef int j
  *     cdef double weight
  *     res = {}             # <<<<<<<<<<<<<<
- *     for i in range(len(inters)):
- *         inters_i = inters[i]
+ *     for i in range(len(similarities)):
+ *         inters_i = similarities[i]
  */
   __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -1241,48 +1241,48 @@ static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject
   /* "gae/cythonized/c_funcs.pyx":10
  *     cdef double weight
  *     res = {}
- *     for i in range(len(inters)):             # <<<<<<<<<<<<<<
- *         inters_i = inters[i]
- *         weight = weights[inters_i['id']]
+ *     for i in range(len(similarities)):             # <<<<<<<<<<<<<<
+ *         inters_i = similarities[i]
+ *         weight = user_scores[inters_i['id']]
  */
-  if (unlikely(__pyx_v_inters == Py_None)) {
+  if (unlikely(__pyx_v_similarities == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
     __PYX_ERR(0, 10, __pyx_L1_error)
   }
-  __pyx_t_2 = PyList_GET_SIZE(__pyx_v_inters); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_2 = PyList_GET_SIZE(__pyx_v_similarities); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 10, __pyx_L1_error)
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
     /* "gae/cythonized/c_funcs.pyx":11
  *     res = {}
- *     for i in range(len(inters)):
- *         inters_i = inters[i]             # <<<<<<<<<<<<<<
- *         weight = weights[inters_i['id']]
+ *     for i in range(len(similarities)):
+ *         inters_i = similarities[i]             # <<<<<<<<<<<<<<
+ *         weight = user_scores[inters_i['id']]
  *         scores = inters_i['scores']
  */
-    if (unlikely(__pyx_v_inters == Py_None)) {
+    if (unlikely(__pyx_v_similarities == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
       __PYX_ERR(0, 11, __pyx_L1_error)
     }
-    __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_inters, __pyx_v_i, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_similarities, __pyx_v_i, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_inters_i, __pyx_t_1);
     __pyx_t_1 = 0;
 
     /* "gae/cythonized/c_funcs.pyx":12
- *     for i in range(len(inters)):
- *         inters_i = inters[i]
- *         weight = weights[inters_i['id']]             # <<<<<<<<<<<<<<
+ *     for i in range(len(similarities)):
+ *         inters_i = similarities[i]
+ *         weight = user_scores[inters_i['id']]             # <<<<<<<<<<<<<<
  *         scores = inters_i['scores']
  *         items = inters_i['items']
  */
-    if (unlikely(__pyx_v_weights == Py_None)) {
+    if (unlikely(__pyx_v_user_scores == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
       __PYX_ERR(0, 12, __pyx_L1_error)
     }
     __pyx_t_1 = PyObject_GetItem(__pyx_v_inters_i, __pyx_n_s_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_weights, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 12, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_user_scores, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 12, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_4); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L1_error)
@@ -1290,8 +1290,8 @@ static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject
     __pyx_v_weight = __pyx_t_5;
 
     /* "gae/cythonized/c_funcs.pyx":13
- *         inters_i = inters[i]
- *         weight = weights[inters_i['id']]
+ *         inters_i = similarities[i]
+ *         weight = user_scores[inters_i['id']]
  *         scores = inters_i['scores']             # <<<<<<<<<<<<<<
  *         items = inters_i['items']
  *         for j in range(len(items)):
@@ -1302,7 +1302,7 @@ static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject
     __pyx_t_4 = 0;
 
     /* "gae/cythonized/c_funcs.pyx":14
- *         weight = weights[inters_i['id']]
+ *         weight = user_scores[inters_i['id']]
  *         scores = inters_i['scores']
  *         items = inters_i['items']             # <<<<<<<<<<<<<<
  *         for j in range(len(items)):
@@ -1390,7 +1390,7 @@ static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject
   /* "gae/cythonized/c_funcs.pyx":4
  * 
  * 
- * cpdef cy_aggregate_scores(list inters, dict weights, int n=10):             # <<<<<<<<<<<<<<
+ * cpdef cy_aggregate_scores(list similarities, dict user_scores, int n=10):             # <<<<<<<<<<<<<<
  *     cdef int i
  *     cdef dict res
  */
@@ -1418,14 +1418,14 @@ static PyObject *__pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(PyObject
 /* Python wrapper */
 static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  PyObject *__pyx_v_inters = 0;
-  PyObject *__pyx_v_weights = 0;
+  PyObject *__pyx_v_similarities = 0;
+  PyObject *__pyx_v_user_scores = 0;
   int __pyx_v_n;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("cy_aggregate_scores (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_inters,&__pyx_n_s_weights,&__pyx_n_s_n,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_similarities,&__pyx_n_s_user_scores,&__pyx_n_s_n,0};
     PyObject* values[3] = {0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -1443,11 +1443,11 @@ static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObje
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_inters)) != 0)) kw_args--;
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_similarities)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
-        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_user_scores)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("cy_aggregate_scores", 0, 2, 3, 1); __PYX_ERR(0, 4, __pyx_L3_error)
         }
@@ -1471,8 +1471,8 @@ static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObje
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_inters = ((PyObject*)values[0]);
-    __pyx_v_weights = ((PyObject*)values[1]);
+    __pyx_v_similarities = ((PyObject*)values[0]);
+    __pyx_v_user_scores = ((PyObject*)values[1]);
     if (values[2]) {
       __pyx_v_n = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_n == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 4, __pyx_L3_error)
     } else {
@@ -1487,9 +1487,9 @@ static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObje
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_inters), (&PyList_Type), 1, "inters", 1))) __PYX_ERR(0, 4, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), (&PyDict_Type), 1, "weights", 1))) __PYX_ERR(0, 4, __pyx_L1_error)
-  __pyx_r = __pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(__pyx_self, __pyx_v_inters, __pyx_v_weights, __pyx_v_n);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_similarities), (&PyList_Type), 1, "similarities", 1))) __PYX_ERR(0, 4, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_user_scores), (&PyDict_Type), 1, "user_scores", 1))) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_r = __pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(__pyx_self, __pyx_v_similarities, __pyx_v_user_scores, __pyx_v_n);
 
   /* function exit code */
   goto __pyx_L0;
@@ -1500,7 +1500,7 @@ static PyObject *__pyx_pw_3gae_10cythonized_7c_funcs_1cy_aggregate_scores(PyObje
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_inters, PyObject *__pyx_v_weights, int __pyx_v_n) {
+static PyObject *__pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_similarities, PyObject *__pyx_v_user_scores, int __pyx_v_n) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1509,7 +1509,7 @@ static PyObject *__pyx_pf_3gae_10cythonized_7c_funcs_cy_aggregate_scores(CYTHON_
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.n = __pyx_v_n;
-  __pyx_t_1 = __pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(__pyx_v_inters, __pyx_v_weights, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_3gae_10cythonized_7c_funcs_cy_aggregate_scores(__pyx_v_similarities, __pyx_v_user_scores, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1566,15 +1566,15 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_id, __pyx_k_id, sizeof(__pyx_k_id), 0, 0, 1, 1},
-  {&__pyx_n_s_inters, __pyx_k_inters, sizeof(__pyx_k_inters), 0, 0, 1, 1},
   {&__pyx_n_s_items, __pyx_k_items, sizeof(__pyx_k_items), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_n, __pyx_k_n, sizeof(__pyx_k_n), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_scores, __pyx_k_scores, sizeof(__pyx_k_scores), 0, 0, 1, 1},
   {&__pyx_n_s_setdefault, __pyx_k_setdefault, sizeof(__pyx_k_setdefault), 0, 0, 1, 1},
+  {&__pyx_n_s_similarities, __pyx_k_similarities, sizeof(__pyx_k_similarities), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
-  {&__pyx_n_s_weights, __pyx_k_weights, sizeof(__pyx_k_weights), 0, 0, 1, 1},
+  {&__pyx_n_s_user_scores, __pyx_k_user_scores, sizeof(__pyx_k_user_scores), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {

@@ -46,7 +46,6 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
     @mock.patch('gae.recommender.Con.datastore')
     def test_make_reco(self, ds_mock, time_mock, config_mock):
         config_mock.__getitem__.return_value = {"kind": "test"}
-        time_mock.time.side_effect = [0, 1]
         class Entity(object):
             def __init__(self, id, items, scores):
                 self.items = items
@@ -61,6 +60,14 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
                 result['result'][i]['score'] = round(
                     result['result'][i]['score'], 3)
 
+        time_mock.time.side_effect = [0, 1]
+        ds_mock.get_keys.return_value = []
+        response = self.test_app.get(
+            '/make_recommendation?browsed=sku0,sku1').json
+        expected = {'elapsed_time': 1, 'results': []}
+        self.assertEqual(response, expected)
+
+        time_mock.time.side_effect = [0, 1]
         e1 = Entity('sku0', ['sku1', 'sku2'], [0.6, 0.4])
         e2 = Entity('sku1', ['sku0', 'sku2'], [0.8, 0.1])
         ds_mock.get_keys.return_value = [e1, e2]

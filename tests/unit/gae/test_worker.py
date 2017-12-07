@@ -35,8 +35,6 @@ class TestWorkerBase(object):
     _source_config = 'tests/unit/data/gae/test_config.json'            
     _dest_config = 'gae/config.py'                                     
     _remove_config_flag = False                                                 
-
-                                                                                
     @classmethod                                                                
     def load_worker_setup(cls):                                                 
         try:                                                                    
