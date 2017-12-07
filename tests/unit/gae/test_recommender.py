@@ -55,7 +55,12 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
                 self.name = id
             def get(self, key):
                 return self.__dict__[key]
-                
+ 
+        def round_result(result):
+            for i in range(len(result['result'])):
+                result['result'][i]['score'] = round(
+                    result['result'][i]['score'], 3)
+
         e1 = Entity('sku0', ['sku1', 'sku2'], [0.6, 0.4])
         e2 = Entity('sku1', ['sku0', 'sku2'], [0.8, 0.1])
         ds_mock.get_keys.return_value = [e1, e2]
@@ -65,15 +70,45 @@ class TestRecommenderService(unittest.TestCase, BaseTests):
                       {"item": "sku0", "score": 0.4}, 
                       {"item": "sku1", "score": 0.3}, 
                       {"item": "sku2", "score": 0.25}]}
-
         self.assertEqual(response, expected)
+        mock_call = list([e for e in ds_mock.get_keys.call_args][0])
+        mock_call = [mock_call[0], sorted(mock_call[1])]
+        self.assertEqual(['test', ['sku0', 'sku1']], mock_call) 
 
         time_mock.time.side_effect = [0, 1]
         response = self.test_app.get('/make_recommendation?browsed=sku0,sku1'
             '&basket=sku0').json
-
         expected = {'elapsed_time': 1, 'result': [
             {'item': 'sku1', 'score': 1.5},
             {'item': 'sku2', 'score': 1.05},
             {'item': 'sku0', 'score': 0.4}]}
+        self.assertEqual(response, expected)
+
+        time_mock.time.side_effect = [0, 1]
+        response = self.test_app.get('/make_recommendation?browsed=sku0,sku1'
+            '&basket=sku0&purchased=sku1').json
+        expected = {'elapsed_time': 1, 'result': [
+            {'item': 'sku0', 'score': 5.2}, {'item': 'sku2', 'score': 1.65},
+            {'item': 'sku1', 'score': 1.5}]}
+        self.assertEqual(response, expected)
+
+        time_mock.time.side_effect = [0, 1]
+        ds_mock.get_keys.return_value = [e1]
+        response = self.test_app.get('/make_recommendation?browsed=sku0').json
+        expected = {'elapsed_time': 1, 'result': [
+            {'item': 'sku1', 'score': 0.3}, {'item': 'sku2', 'score': 0.2}]}
+        self.assertEqual(response, expected)
+
+        time_mock.time.side_effect = [0, 1]
+        response = self.test_app.get('/make_recommendation?basket=sku0').json
+        expected = {'elapsed_time': 1, 'result': [
+            {'item': 'sku1', 'score': 1.2}, {'item': 'sku2', 'score': 0.8}]}
+        self.assertEqual(response, expected)
+
+        time_mock.time.side_effect = [0, 1]
+        response = self.test_app.get(
+            '/make_recommendation?purchased=sku0').json
+        round_result(response)
+        expected = {'elapsed_time': 1, 'result': [
+            {'item': 'sku1', 'score': 3.6}, {'item': 'sku2', 'score': 2.4}]}
         self.assertEqual(response, expected)
