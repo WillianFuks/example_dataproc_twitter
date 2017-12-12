@@ -1,5 +1,5 @@
 # Implementation of a Twitter Based Recommender System Fully Serverless Using GCP
-This repository is used as source code for the medium post about implementing a Twitter recommender system using GCP.
+This repository is used as source code for the [medium post](https://medium.com/@willian.fuks/how-we-implemented-a-fully-serverless-recommender-system-using-gcp-9c9fbbdc46cc) about implementing a Twitter recommender system using GCP.
 
 We used 5 main tools from Google Cloud Platform: [Dataflow](https://cloud.google.com/dataflow/), [Dataproc](https://cloud.google.com/dataproc/), [AppEngine](https://cloud.google.com/appengine/), [Bigquery](https://cloud.google.com/bigquery/) and [Cloud Storage](https://cloud.google.com/storage/)
 
@@ -19,6 +19,15 @@ We have two distinct requirements for GAE, `requirements.txt` is targeted to the
 Here we have the following available crons:
 * Exportage of customers data from BigQuery to Google Cloud Storage (GCS), defined under the route `/export_customers` in `worker.py`
 * Creation of Dataproc Cluster, execution of DIMSUM algorithm, deletion of cluster and initializaiton of Dataflow pipeline in route `/dataproc_dimsum` also in `worker.py`.
+
+To deploy these files just run:
+
+```
+gcloud app deploy app.yaml worker.yaml
+gcloud app deploy cron.yaml
+gcloud app deploy queue.yaml
+gcloud app deploy recommender.yaml
+```
 
 ### Unit Tests for GAE
 Running unit testing in this project is quite simple, just install [nox](https://nox.readthedocs.io/en/latest/) by running:
